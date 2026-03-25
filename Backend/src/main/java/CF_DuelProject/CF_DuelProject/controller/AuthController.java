@@ -28,6 +28,7 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@RequestBody AuthRequest req) {
         String token = authService.login(req);
+        System.out.println("Token: " + token);
         return new AuthResponse(token);
     }
     

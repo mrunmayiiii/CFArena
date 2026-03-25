@@ -1,14 +1,15 @@
 package CF_DuelProject.CF_DuelProject.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.config.authentication.PasswordEncoderParser;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import CF_DuelProject.CF_DuelProject.dto.*;
 import CF_DuelProject.CF_DuelProject.model.User;
 import CF_DuelProject.CF_DuelProject.repository.UserRepository;
 
 
+@Service
 public class AuthService {
     
     @Autowired
