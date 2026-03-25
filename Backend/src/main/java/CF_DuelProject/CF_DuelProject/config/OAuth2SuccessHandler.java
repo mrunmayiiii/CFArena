@@ -1,5 +1,7 @@
 package CF_DuelProject.CF_DuelProject.config;
 
+import java.io.IOException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -14,6 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
     @Autowired
     UserRepository userRepository;
 
@@ -23,12 +26,16 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
-                                        Authentication authentication) {
+                                        Authentication authentication) throws IOException {
 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
+
+        System.out.println("OAuth Login Success");
+        System.out.println("Email: " + email);
+        System.out.println("Name: " + name);
 
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> {
@@ -41,11 +48,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         String token = jwtService.generateToken(email);
 
-        try {
-            getRedirectStrategy().sendRedirect(request, response,
-                    "http://localhost:3000/oauth-success?token=" + token);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        System.out.println("JWT Token: " + token);
+
+        // ✅ Send response directly (no redirect)
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+
+        String jsonResponse = "{ \"token\": \"" + token + "\" }";
+        response.getWriter().write(jsonResponse);
+        response.getWriter().flush();
     }
 }
