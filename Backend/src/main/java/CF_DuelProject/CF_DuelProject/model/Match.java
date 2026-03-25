@@ -25,5 +25,6 @@ public class Match {
     private String winnerId;
     private Date startTime;
     private Date endTime;
+    private String inviteCode;
 
 }
