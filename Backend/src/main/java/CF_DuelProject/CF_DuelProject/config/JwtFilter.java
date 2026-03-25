@@ -4,13 +4,18 @@ import CF_DuelProject.CF_DuelProject.service.JwtService;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
+
+@Component
 public class JwtFilter extends OncePerRequestFilter {
-    
-     @Autowired
+
+    @Autowired
     JwtService jwtService;
 
     @Override
@@ -19,19 +24,30 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        try {
+            String authHeader = request.getHeader("Authorization");
 
-        if(authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String email = jwtService.extractEmail(token);
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                String email = jwtService.extractEmail(token);
 
-            // simple auth (no roles)
-            SecurityContextHolder.getContext().setAuthentication(
-                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(email, null, null)
-            );
+                if (email != null && jwtService.isTokenValid(token)) {
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    null,
+                                    Collections.emptyList() // ✅ NOT null
+                            );
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            }
+        } catch (Exception e) {
+            // ✅ Just clear context, don't rethrow — let security handle 401
+            SecurityContextHolder.clearContext();
+            System.out.println("JWT Filter error: " + e.getMessage()); // see what's failing
         }
 
+        // ✅ ALWAYS call this, even if token is invalid
         filterChain.doFilter(request, response);
-
-                }  
-  }
+    }
+}
