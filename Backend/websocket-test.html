@@ -1,46 +1,93 @@
+<!--
+  WebSocket Test Page - connects to Spring STOMP backend via SockJS.
+  Subscribe to any /topic/ destination and see messages in real time.
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #status { font-weight: bold; margin: 10px 0; }
+        .connected { color: green; }
+        .disconnected { color: red; }
+        #messages { border: 1px solid #ccc; padding: 10px; margin-top: 10px; max-height: 400px; overflow-y: auto; }
+        input, button { padding: 6px 12px; margin: 4px; }
+    </style>
 </head>
 <body>
     <h1>WebSocket Test Page</h1>
-    <input type="text" id="messageInput" placeholder="Type a message...">
-    <button onclick="sendMessage()">Send</button>
+
+    <div>
+        <label>Topic to subscribe:</label>
+        <input type="text" id="topicInput" placeholder="/topic/match/12345" value="/topic/match/">
+    </div>
+
+    <div>
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+
+    <div id="status" class="disconnected">Disconnected</div>
     <div id="messages"></div>
+
     <script>
-        // Change the URL to match your backend WebSocket endpoint
-        const wsUrl = 'ws://localhost:8080/ws';
-        const socket = new WebSocket(wsUrl);
+        let stompClient = null;
+        let subscription = null;
 
-        socket.onopen = function() {
-            document.getElementById('messages').innerHTML += '<p><em>Connected to WebSocket server.</em></p>';
-        };
-
-        socket.onmessage = function(event) {
-            document.getElementById('messages').innerHTML += '<p><strong>Received:</strong> ' + event.data + '</p>';
-        };
-
-        socket.onclose = function() {
-            document.getElementById('messages').innerHTML += '<p><em>WebSocket connection closed.</em></p>';
-        };
-
-        socket.onerror = function(error) {
-            document.getElementById('messages').innerHTML += '<p style="color:red"><em>Error: ' + error.message + '</em></p>';
-        };
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(input.value);
-                document.getElementById('messages').innerHTML += '<p><strong>Sent:</strong> ' + input.value + '</p>';
-                input.value = '';
-            } else {
-                alert('WebSocket is not open.');
+        function connect() {
+            const topic = document.getElementById('topicInput').value.trim();
+            if (!topic) {
+                alert('Please enter a topic to subscribe to.');
+                return;
             }
+
+            if (stompClient && stompClient.connected) {
+                disconnect();
+            }
+
+            const socket = new SockJS('http://127.0.0.1:8080/ws');
+            stompClient = Stomp.over(socket);
+
+            stompClient.connect({}, function(frame) {
+                document.getElementById('status').textContent = 'Connected ✅';
+                document.getElementById('status').className = 'connected';
+                addMessage('🔗 Connected: ' + frame, 'green');
+
+                subscription = stompClient.subscribe(topic, function(message) {
+                    const data = JSON.parse(message.body);
+                    addMessage('📩 ' + JSON.stringify(data, null, 2), 'blue');
+                });
+
+                addMessage('📡 Subscribed to: ' + topic, 'green');
+            }, function(error) {
+                document.getElementById('status').textContent = 'Connection Error ❌';
+                document.getElementById('status').className = 'disconnected';
+                addMessage('❌ Error: ' + error, 'red');
+            });
+        }
+
+        function disconnect() {
+            if (subscription) {
+                subscription.unsubscribe();
+                subscription = null;
+            }
+            if (stompClient) {
+                stompClient.disconnect();
+                stompClient = null;
+            }
+            document.getElementById('status').textContent = 'Disconnected';
+            document.getElementById('status').className = 'disconnected';
+            addMessage('🔌 Disconnected', 'gray');
+        }
+
+        function addMessage(text, color) {
+            const div = document.getElementById('messages');
+            div.innerHTML += '<p style="color:' + color + '; margin: 4px 0;"><code>' + text + '</code></p>';
+            div.scrollTop = div.scrollHeight;
         }
     </script>
 </body>
