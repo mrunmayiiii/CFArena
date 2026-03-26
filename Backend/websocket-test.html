@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test Page</h1>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+    <div id="messages"></div>
+    <script>
+        // Change the URL to match your backend WebSocket endpoint
+        const wsUrl = 'ws://localhost:8080/ws';
+        const socket = new WebSocket(wsUrl);
+
+        socket.onopen = function() {
+            document.getElementById('messages').innerHTML += '<p><em>Connected to WebSocket server.</em></p>';
+        };
+
+        socket.onmessage = function(event) {
+            document.getElementById('messages').innerHTML += '<p><strong>Received:</strong> ' + event.data + '</p>';
+        };
+
+        socket.onclose = function() {
+            document.getElementById('messages').innerHTML += '<p><em>WebSocket connection closed.</em></p>';
+        };
+
+        socket.onerror = function(error) {
+            document.getElementById('messages').innerHTML += '<p style="color:red"><em>Error: ' + error.message + '</em></p>';
+        };
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(input.value);
+                document.getElementById('messages').innerHTML += '<p><strong>Sent:</strong> ' + input.value + '</p>';
+                input.value = '';
+            } else {
+                alert('WebSocket is not open.');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -30,7 +30,7 @@ public class SecurityConfig {
     )
 
     .authorizeHttpRequests(auth -> auth
-        .requestMatchers("/auth/**", "/oauth2/**").permitAll()
+        .requestMatchers("/auth/**", "/oauth2/**", "/ws/**").permitAll()
         .anyRequest().authenticated()
     )
 
