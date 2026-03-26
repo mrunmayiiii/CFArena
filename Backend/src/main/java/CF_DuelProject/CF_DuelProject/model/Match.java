@@ -1,6 +1,7 @@
 package CF_DuelProject.CF_DuelProject.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Data;
@@ -25,6 +26,7 @@ public class Match {
     private String winnerId;
     private Date startTime;
     private Date endTime;
+    @Indexed(unique = true)
     private String inviteCode;
 
 }

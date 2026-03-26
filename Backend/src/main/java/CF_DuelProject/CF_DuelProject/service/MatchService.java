@@ -166,14 +166,24 @@ public class MatchService {
     }
 
     // ✅ Create Match
-    public Match createMatch(String userId) {
+   public Match createMatch(String userId, int durationMinutes) {
+
         Match match = new Match();
+
         match.setUser1(userId);
         match.setScore1(0);
         match.setScore2(0);
         match.setCurIdx(0);
         match.setStatus("WAITING");
         match.setInviteCode(generateCode());
+
+        // ⏱ set start time
+        Date startTime = new Date();
+        match.setStartTime(startTime);
+
+        // ⏱ set end time = start + duration
+        Date endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+        match.setEndTime(endTime);
 
         return matchRepository.save(match);
     }
@@ -193,7 +203,7 @@ public class MatchService {
 
         match.setUser2(userId);
         match.setStartTime(new Date());
-        match.setStatus("STARTED");
+        match.setStatus("ONGOING");
 
         List<String> problems = problemService.getMatchProblems(
                 match.getUser1(),
