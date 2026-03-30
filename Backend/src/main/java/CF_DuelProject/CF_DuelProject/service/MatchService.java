@@ -9,26 +9,31 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mongodb.client.result.UpdateResult;
 
 import CF_DuelProject.CF_DuelProject.dto.SolveResult;
-import CF_DuelProject.CF_DuelProject.model.Match;
-import CF_DuelProject.CF_DuelProject.repository.MatchRepository;
+import CF_DuelProject.CF_DuelProject.model.MatchPrimary;
+import CF_DuelProject.CF_DuelProject.model.MatchSecondary;
+import CF_DuelProject.CF_DuelProject.repository.PrimaryMatchRepository;
+import CF_DuelProject.CF_DuelProject.repository.SecondaryMatchRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class MatchService {
 
-    private final MatchRepository matchRepository;
+    private final PrimaryMatchRepository matchRepository;
+    private final SecondaryMatchRepository matchRepository2;
     private final MongoTemplate mongoTemplate;
     private final CodeforcesService codeforcesService;
     private final ProblemService problemService;
     private final SimpMessagingTemplate messagingTemplate;
 
+
     // 📡 WebSocket: publish match update to frontend
-    private void publishMatchUpdate(Match match) {
+    private void publishMatchUpdate(MatchPrimary match) {
         System.out.println("📡 WebSocket SEND → /topic/match/" + match.getId() + " | Score: " + match.getScore1() + "-" + match.getScore2());
         messagingTemplate.convertAndSend("/topic/match/" + match.getId(), match);
         // Also publish to invite code topic so clients can subscribe by invite code
@@ -38,7 +43,7 @@ public class MatchService {
     }
 
     // 🚀 MAIN LOGIC
-    public void processMatch(Match match) {
+    public void processMatch(MatchPrimary match) {
 
         // ⏱ check match end
         if (new Date().after(match.getEndTime())) {
@@ -83,7 +88,7 @@ public class MatchService {
         if (success) {
             System.out.println("✅ Winner locked: " + winner);
             // 📡 Fetch latest and publish via WebSocket
-            Match latest = matchRepository.findById(match.getId()).orElse(null);
+            MatchPrimary latest = matchRepository.findById(match.getId()).orElse(null);
             if (latest != null) {
                 publishMatchUpdate(latest);
             }
@@ -92,7 +97,7 @@ public class MatchService {
         }
     }
 
-    private SolveResult checkSolve(String user1, String user2, String problem, Match match) {
+    private SolveResult checkSolve(String user1, String user2, String problem, MatchPrimary match) {
 
         Date t1 = codeforcesService.getSolveTime(user1, problem, match.getStartTime());
         Date t2 = codeforcesService.getSolveTime(user2, problem, match.getStartTime());
@@ -108,7 +113,7 @@ public class MatchService {
     }
 
     // 🔥 ATOMIC UPDATE (prevents race conditions)
-    private boolean tryUpdateMatch(String matchId, int expectedIdx, String winner, Match match) {
+    private boolean tryUpdateMatch(String matchId, int expectedIdx, String winner, MatchPrimary match) {
 
         Query query = new Query();
         query.addCriteria(Criteria.where("_id").is(matchId));
@@ -124,33 +129,57 @@ public class MatchService {
 
         update.inc("curIdx", 1);
 
-        UpdateResult result = mongoTemplate.updateFirst(query, update, Match.class);
+        UpdateResult result = mongoTemplate.updateFirst(query, update, MatchPrimary.class);
 
         return result.getModifiedCount() > 0;
     }
 
-    // 🏁 Finish match (safer: re-fetches from DB)
-    private void finishMatch(String matchId) {
+    // @Transactional
+private void finishMatch(String matchId) {
 
-        Match match = matchRepository.findById(matchId).orElse(null);
+        MatchPrimary match = matchRepository.findById(matchId).orElse(null);
         if (match == null) return;
 
         if ("FINISHED".equals(match.getStatus())) return;
 
         System.out.println("🏁 Match Finished: " + match.getId());
 
+        String winner;
         if (match.getScore1() > match.getScore2()) {
-            match.setWinnerId(match.getUser1());
+            winner = match.getUser1();
         } else if (match.getScore2() > match.getScore1()) {
-            match.setWinnerId(match.getUser2());
+            winner = match.getUser2();
         } else {
-            match.setWinnerId("DRAW");
+            winner = "DRAW";
         }
 
-        match.setStatus("FINISHED");
+        // 🔥 CREATE SECONDARY ENTRY
+        MatchSecondary newMatch = new MatchSecondary();
 
-        matchRepository.save(match);
-        publishMatchUpdate(match);  // 📡 Notify frontend match is done
+        newMatch.setUser1(match.getUser1());
+        newMatch.setUser2(match.getUser2());
+
+        newMatch.setScore1(match.getScore1());
+        newMatch.setScore2(match.getScore2());
+
+        newMatch.setProblems(match.getProblems());
+        newMatch.setCurIdx(match.getCurIdx());
+
+        newMatch.setStatus("FINISHED");
+        newMatch.setWinnerId(winner);
+
+        newMatch.setStartTime(match.getStartTime());
+        newMatch.setEndTime(match.getEndTime());
+
+        newMatch.setInviteCode(match.getInviteCode());
+
+        // save to secondary
+        MatchSecondary saved = matchRepository2.save(newMatch);
+
+        // delete from primary
+        
+        publishMatchUpdate(match); 
+        matchRepository.delete(match);
     }
 
     public String generateCode() {
@@ -166,9 +195,9 @@ public class MatchService {
     }
 
     // ✅ Create Match
-    public Match createMatch(String userId, int durationMinutes) {
+    public MatchSecondary createMatch(String userId, int durationMinutes) {
 
-        Match match = new Match();
+        MatchSecondary match = new MatchSecondary();
 
         match.setUser1(userId);
         match.setScore1(0);
@@ -184,12 +213,12 @@ public class MatchService {
         // store duration temporarily in endTime later
         match.setEndTime(new Date(durationMinutes * 60 * 1000)); // temp storage trick
 
-        return matchRepository.save(match);
+        return matchRepository2.save(match);
     }
 
-    public Match joinMatch(String userId, String inviteCode) {
+    public MatchSecondary joinMatch(String userId, String inviteCode) {
 
-    Match match = matchRepository.findByInviteCode(inviteCode)
+    MatchSecondary match = matchRepository2.findByInviteCode(inviteCode)
             .orElseThrow(() -> new RuntimeException("Invalid invite code"));
 
     if (match.getUser2() != null) {
@@ -205,50 +234,58 @@ public class MatchService {
     // 🔥 IMPORTANT
     match.setStatus("READY");
 
-    Match saved = matchRepository.save(match);
-    publishMatchUpdate(saved);
+    MatchSecondary saved = matchRepository2.save(match);
+    // publishMatchUpdate(saved);
 
     return saved;
     }
 
 
-    public Match startMatch(String userId, String inviteCode) {
+    public MatchPrimary startMatch(String userId, String inviteCode) {
 
-    Match match = matchRepository.findByInviteCode(inviteCode)
-            .orElseThrow(() -> new RuntimeException("Invalid code"));
+        MatchSecondary match = matchRepository2.findByInviteCode(inviteCode)
+                .orElseThrow(() -> new RuntimeException("Invalid code"));
 
-    if (!userId.equals(match.getUser1())) {
-        throw new RuntimeException("Only creator can start");
-    }
+        if (!userId.equals(match.getUser1())) {
+            throw new RuntimeException("Only creator can start");
+        }
 
-    if (!"READY".equals(match.getStatus())) {
-        throw new RuntimeException("Player 2 not joined/ready");
-    }
+        if (!"READY".equals(match.getStatus())) {
+            throw new RuntimeException("Player 2 not joined/ready");
+        }
 
-    // 🔥 NOW START
-    Date startTime = new Date();
-    match.setStartTime(startTime);
+        Date startTime = new Date();
 
-    long durationMillis = match.getEndTime().getTime();
-    Date endTime = new Date(startTime.getTime() + durationMillis);
+        long durationMillis = match.getEndTime().getTime();
+        Date endTime = new Date(startTime.getTime() + durationMillis);
 
-    match.setEndTime(endTime);
+        List<String> problems = problemService.getMatchProblems(
+                match.getUser1(),
+                match.getUser2()
+        );
 
-    match.setStatus("ONGOING");
+        MatchPrimary newMatch = new MatchPrimary();
 
-    List<String> problems = problemService.getMatchProblems(
-            match.getUser1(),
-            match.getUser2()
-    );
+        newMatch.setUser1(match.getUser1());
+        newMatch.setUser2(match.getUser2());
 
-    match.setProblems(problems);
-    match.setCurIdx(0);
+        newMatch.setScore1(0);
+        newMatch.setScore2(0);
 
-    Match saved = matchRepository.save(match);
-    publishMatchUpdate(saved);
+        newMatch.setProblems(problems);
+        newMatch.setCurIdx(0);
 
-    return saved;
-    
+        newMatch.setStatus("ONGOING");
+        newMatch.setWinnerId(null);
+
+        newMatch.setStartTime(startTime);
+        newMatch.setEndTime(endTime);
+
+        newMatch.setInviteCode(match.getInviteCode());
+        MatchPrimary saved = matchRepository.save(newMatch);
+        matchRepository2.delete(match);
+        publishMatchUpdate(saved);
+        return saved;
     }
 
 }

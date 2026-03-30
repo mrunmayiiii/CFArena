@@ -10,8 +10,8 @@ import java.util.Date;
 import java.util.List;
 
 @Data
-@Document(collection = "matches")
-public class Match {
+@Document(collection = "secondary_matches")
+public class MatchSecondary {
   
     @Id
     private String id;
