@@ -19,22 +19,37 @@ public class MatchController {
         this.matchService = matchService;
         this.userService = userService;
     }
+
+    // ✅ CREATE
     @PostMapping("/create")
-    public Match create(
-            Authentication authentication,
-            @RequestBody CreateMatchRequest req
-    ) {
+    public Match create(Authentication authentication,
+                        @RequestBody CreateMatchRequest req) {
+
         String email = authentication.getName();
         String cfHandle = userService.getCfHandleByEmail(email);
 
         return matchService.createMatch(cfHandle, req.duration);
     }
 
+    // ✅ JOIN (auto READY)
     @PostMapping("/join")
     public Match join(Authentication authentication,
                       @RequestParam String inviteCode) {
+
         String email = authentication.getName();
-        String cfHandle = userService.getCfHandleByEmail(email); // ✅ email → cfHandle
+        String cfHandle = userService.getCfHandleByEmail(email);
+
         return matchService.joinMatch(cfHandle, inviteCode);
+    }
+
+    // 🟢 START (Player 1 clicks button)
+    @PostMapping("/start")
+    public Match start(Authentication authentication,
+                       @RequestParam String inviteCode) {
+
+        String email = authentication.getName();
+        String cfHandle = userService.getCfHandleByEmail(email);
+
+        return matchService.startMatch(cfHandle, inviteCode);
     }
 }

@@ -166,7 +166,7 @@ public class MatchService {
     }
 
     // ✅ Create Match
-   public Match createMatch(String userId, int durationMinutes) {
+    public Match createMatch(String userId, int durationMinutes) {
 
         Match match = new Match();
 
@@ -174,49 +174,81 @@ public class MatchService {
         match.setScore1(0);
         match.setScore2(0);
         match.setCurIdx(0);
+
         match.setStatus("WAITING");
         match.setInviteCode(generateCode());
 
-        // ⏱ set start time
-        Date startTime = new Date();
-        match.setStartTime(startTime);
+        match.setStartTime(null);
+        match.setEndTime(null);
 
-        // ⏱ set end time = start + duration
-        Date endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
-        match.setEndTime(endTime);
+        // store duration temporarily in endTime later
+        match.setEndTime(new Date(durationMinutes * 60 * 1000)); // temp storage trick
 
         return matchRepository.save(match);
     }
 
     public Match joinMatch(String userId, String inviteCode) {
 
-        Match match = matchRepository.findByInviteCode(inviteCode)
-                .orElseThrow(() -> new RuntimeException("Invalid invite code"));
+    Match match = matchRepository.findByInviteCode(inviteCode)
+            .orElseThrow(() -> new RuntimeException("Invalid invite code"));
 
-        if (match.getUser2() != null) {
-            throw new RuntimeException("Match already full");
-        }
+    if (match.getUser2() != null) {
+        throw new RuntimeException("Match already full");
+    }
 
-        if (match.getUser1().equals(userId)) {
-            throw new RuntimeException("Cannot join your own match");
-        }
+    if (match.getUser1().equals(userId)) {
+        throw new RuntimeException("Cannot join your own match");
+    }
 
-        match.setUser2(userId);
-        match.setStartTime(new Date());
-        match.setStatus("ONGOING");
+    match.setUser2(userId);
 
-        List<String> problems = problemService.getMatchProblems(
-                match.getUser1(),
-                userId
-        );
+    // 🔥 IMPORTANT
+    match.setStatus("READY");
 
-        match.setProblems(problems);
-        match.setCurIdx(0);
+    Match saved = matchRepository.save(match);
+    publishMatchUpdate(saved);
 
-        Match saved = matchRepository.save(match);
-        publishMatchUpdate(saved);  // 📡 Notify frontend match started
+    return saved;
+    }
 
-        return saved;
+
+    public Match startMatch(String userId, String inviteCode) {
+
+    Match match = matchRepository.findByInviteCode(inviteCode)
+            .orElseThrow(() -> new RuntimeException("Invalid code"));
+
+    if (!userId.equals(match.getUser1())) {
+        throw new RuntimeException("Only creator can start");
+    }
+
+    if (!"READY".equals(match.getStatus())) {
+        throw new RuntimeException("Player 2 not joined/ready");
+    }
+
+    // 🔥 NOW START
+    Date startTime = new Date();
+    match.setStartTime(startTime);
+
+    long durationMillis = match.getEndTime().getTime();
+    Date endTime = new Date(startTime.getTime() + durationMillis);
+
+    match.setEndTime(endTime);
+
+    match.setStatus("ONGOING");
+
+    List<String> problems = problemService.getMatchProblems(
+            match.getUser1(),
+            match.getUser2()
+    );
+
+    match.setProblems(problems);
+    match.setCurIdx(0);
+
+    Match saved = matchRepository.save(match);
+    publishMatchUpdate(saved);
+
+    return saved;
+    
     }
 
 }
