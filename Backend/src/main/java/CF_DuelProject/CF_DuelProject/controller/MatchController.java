@@ -1,10 +1,13 @@
 package CF_DuelProject.CF_DuelProject.controller;
 
+import java.io.Console;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import CF_DuelProject.CF_DuelProject.dto.CreateMatchRequest;
-import CF_DuelProject.CF_DuelProject.model.Match;
+import CF_DuelProject.CF_DuelProject.model.MatchPrimary;
+import CF_DuelProject.CF_DuelProject.model.MatchSecondary;
 import CF_DuelProject.CF_DuelProject.service.MatchService;
 import CF_DuelProject.CF_DuelProject.service.UserService;
 
@@ -22,7 +25,7 @@ public class MatchController {
 
     // ✅ CREATE
     @PostMapping("/create")
-    public Match create(Authentication authentication,
+    public MatchSecondary create(Authentication authentication,
                         @RequestBody CreateMatchRequest req) {
 
         String email = authentication.getName();
@@ -33,9 +36,10 @@ public class MatchController {
 
     // ✅ JOIN (auto READY)
     @PostMapping("/join")
-    public Match join(Authentication authentication,
+    public MatchSecondary join(Authentication authentication,
                       @RequestParam String inviteCode) {
 
+        // System.out.println("Params: " + request.getQueryString());
         String email = authentication.getName();
         String cfHandle = userService.getCfHandleByEmail(email);
 
@@ -44,7 +48,7 @@ public class MatchController {
 
     // 🟢 START (Player 1 clicks button)
     @PostMapping("/start")
-    public Match start(Authentication authentication,
+    public MatchPrimary start(Authentication authentication,
                        @RequestParam String inviteCode) {
 
         String email = authentication.getName();

@@ -1,7 +1,7 @@
 package CF_DuelProject.CF_DuelProject.scheduler;
 
-import CF_DuelProject.CF_DuelProject.model.Match;
-import CF_DuelProject.CF_DuelProject.repository.MatchRepository;
+import CF_DuelProject.CF_DuelProject.model.MatchPrimary;
+import CF_DuelProject.CF_DuelProject.repository.PrimaryMatchRepository;
 import CF_DuelProject.CF_DuelProject.service.MatchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,15 +13,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MatchScheduler {
 
-    private final MatchRepository matchRepository;
+    private final PrimaryMatchRepository matchRepository;
     private final MatchService matchService;
 
     @Scheduled(fixedRate = 5000)
     public void runScheduler() {
 
-        List<Match> matches = matchRepository.findByStatus("ONGOING");
+        List<MatchPrimary> matches = matchRepository.findAll();
         System.out.println("===== Scheduler Tick =====");
-            for (Match match : matches) {
+            for (MatchPrimary match : matches) {
             matchService.processMatch(match);
         }
     }
