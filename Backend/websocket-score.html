@@ -41,6 +41,15 @@
                     const data = JSON.parse(message.body);
                     document.getElementById('score').textContent = `Score: ${data.score1} - ${data.score2}`;
                     document.getElementById('messages').innerHTML += '<p>Update: ' + message.body + '</p>';
+                    // Disconnect if match is finished
+                    if (data.status === 'FINISHED') {
+                        document.getElementById('messages').innerHTML += '<p style="color:green"><em>Match finished. Disconnecting...</em></p>';
+                        if (stompClient) {
+                            stompClient.disconnect(function() {
+                                document.getElementById('messages').innerHTML += '<p><em>Disconnected from server.</em></p>';
+                            });
+                        }
+                    }
                 });
             }, function(error) {
                 document.getElementById('messages').innerHTML += '<p style="color:red"><em>Connection error: ' + error + '</em></p>';
