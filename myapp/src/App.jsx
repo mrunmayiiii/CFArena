@@ -1,10 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Landing from './pages/Landing'
-// import Login    from './pages/Login'
-// import Signup   from './pages/Signup'
-// import Dashboard from './pages/Dashboard'
-// import Lobby    from './pages/Lobby'
-// import MatchRoom from './pages/MatchRoom'
+import Login from './pages/auth/login'
+import Signup from './pages/auth/signup'
+import OAuthCallback from './pages/auth/OAuthCallback'
+import Dashboard from './pages/Dashboard'
+import MatchCreate from './pages/match/MatchCreate'
+import MatchJoin from './pages/match/MatchJoin'
+import MatchRoom from './pages/match/MatchRoom'
+import Results from './pages/match/Results'
 
 /* ── Global styles injected once ─────────────────────────────────────────── */
 const globalCSS = `
@@ -56,12 +59,10 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(style)
 }
 
-/* ── Protected route helper (use once auth is wired up) ───────────────────
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('cf_duel_token')
+  const token = localStorage.getItem('token')
   return token ? children : <Navigate to="/login" replace />
 }
-*/
 
 export default function App() {
   return (
@@ -69,13 +70,16 @@ export default function App() {
       <Routes>
         {/* Public */}
         <Route path="/"        element={<Landing />} />
-        {/* <Route path="/login"   element={<Login />} /> */}
-        {/* <Route path="/signup"  element={<Signup />} /> */}
+        <Route path="/login"   element={<Login />} />
+        <Route path="/signup"  element={<Signup />} />
+        <Route path="/auth/callback" element={<OAuthCallback />} />
 
-        {/* Protected (uncomment when pages are ready) */}
-        {/* <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} /> */}
-        {/* <Route path="/lobby/:code" element={<ProtectedRoute><Lobby /></ProtectedRoute>} /> */}
-        {/* <Route path="/match/:id"   element={<ProtectedRoute><MatchRoom /></ProtectedRoute>} /> */}
+        {/* Protected */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/match/create" element={<ProtectedRoute><MatchCreate /></ProtectedRoute>} />
+        <Route path="/match/join" element={<ProtectedRoute><MatchJoin /></ProtectedRoute>} />
+        <Route path="/match/:inviteCode" element={<ProtectedRoute><MatchRoom /></ProtectedRoute>} />
+        <Route path="/results/:matchId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -46,19 +46,22 @@ public class SecurityConfig {
 
             .csrf(csrf -> csrf.disable())
 
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
+            
 
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/oauth2/**", "/ws/**").permitAll()
-                .anyRequest().authenticated()
+.requestMatchers("/auth/**", "/oauth2/**", "/login/**", "/ws/**").permitAll()                .anyRequest().authenticated()
             )
 
             .oauth2Login(oauth -> oauth
                 .successHandler(handler)
             )
-
+            .oauth2Login(oauth -> oauth
+            .successHandler(handler)
+            .failureHandler((req, res, ex) -> {
+                System.out.println("OAuth2 failure: " + ex.getMessage());
+                res.sendRedirect("http://localhost:5173/login");
+            })
+        )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, exx) -> {
                     res.setStatus(401);
@@ -67,7 +70,7 @@ public class SecurityConfig {
             )
 
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
+            
         return http.build();
     }
 

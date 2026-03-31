@@ -64,7 +64,7 @@ function TermLine({ cmd }) {
 
 function TermOut({ children, color }) {
   return (
-    <div style={{ paddingLeft: 20, marginBottom: 10, color: color || '#6b6b60', fontSize: 13 }}>
+    <div style={{ paddingLeft: 20, marginBottom: 10, color: color || '#9a9d92', fontSize: 13 }}>
       {children}
     </div>
   )
@@ -137,11 +137,11 @@ export default function Landing() {
             <h1 style={s.h1}>
               <span style={{ display: 'block', color: '#e8e8e0' }}>PROVE</span>
               <span style={{ display: 'block', color: '#c8ff00' }}>YOU&apos;RE</span>
-              <span style={{ display: 'block', WebkitTextStroke: '1px #3d3d3d', color: 'transparent' }}>BETTER.</span>
+              <span style={{ display: 'block', WebkitTextStroke: '1px #707768', color: 'rgba(176,184,168,0.26)', textShadow: '0 0 10px rgba(120,130,112,0.2)' }}>BETTER.</span>
             </h1>
             <p style={s.heroSub}>
               Challenge any Codeforces user to a live 1v1 duel.
-              Race through curated problems and settle the ranking debate.
+              Race through curated problems and settle the ranking debate with real match pressure.
             </p>
             <div style={s.heroCta}>
               <a href="/signup" style={s.btnPrimary}>Start dueling →</a>
@@ -159,7 +159,7 @@ export default function Landing() {
           <p style={s.sectionLabel}>// how it works</p>
           <h2 style={s.sectionTitle}>
             Three steps to{' '}
-            <span style={{ WebkitTextStroke: '1px #3d3d3d', color: 'transparent' }}>domination</span>
+            <span style={{ WebkitTextStroke: '1px #6f7568', color: 'rgba(176,184,168,0.24)', textShadow: '0 0 8px rgba(120,130,112,0.14)' }}>domination</span>
           </h2>
           <div style={s.stepsGrid}>
             {STEPS.map(step => <StepCard key={step.num} {...step} />)}
@@ -173,7 +173,7 @@ export default function Landing() {
           <p style={s.sectionLabel}>// features</p>
           <h2 style={s.sectionTitle}>
             Built for{' '}
-            <span style={{ WebkitTextStroke: '1px #3d3d3d', color: 'transparent' }}>serious</span>{' '}
+            <span style={{ WebkitTextStroke: '1px #6f7568', color: 'rgba(176,184,168,0.24)', textShadow: '0 0 8px rgba(120,130,112,0.14)' }}>serious</span>{' '}
             competitors
           </h2>
           <div style={s.featuresGrid}>
@@ -186,7 +186,7 @@ export default function Landing() {
       <div style={s.ctaSection}>
         <div style={s.ctaInner}>
           <h2 style={s.ctaH2}>Ready to <span style={{ color: '#c8ff00' }}>prove it?</span></h2>
-          <p style={{ color: '#6b6b60', marginBottom: '2rem', fontSize: 14 }}>
+          <p style={{ color: '#9a9d92', marginBottom: '2rem', fontSize: 15, lineHeight: 1.8 }}>
             Create a free account. Link your handle. Issue a challenge.
           </p>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
@@ -198,13 +198,13 @@ export default function Landing() {
 
       {/* FOOTER */}
       <footer style={s.footer}>
-        <span style={{ fontSize: 12, color: '#6b6b60' }}>
-          © 2025 CF_DUEL ·{' '}
-          <a href="#" style={{ color: '#6b6b60', textDecoration: 'none' }}>GitHub</a>
+        <span style={{ fontSize: 12, color: '#9a9d92' }}>
+          © 2026 CF_DUEL ·{' '}
+          <a href="#" style={{ color: '#9a9d92', textDecoration: 'none' }}>GitHub</a>
           {' · '}
-          <a href="#" style={{ color: '#6b6b60', textDecoration: 'none' }}>API</a>
+          <a href="#" style={{ color: '#9a9d92', textDecoration: 'none' }}>API</a>
         </span>
-        <span style={{ fontSize: 12, color: '#3d3d3d' }}>Spring Boot · MongoDB · WebSocket</span>
+        <span style={{ fontSize: 12, color: '#6f7268' }}>Spring Boot · MongoDB · WebSocket</span>
       </footer>
     </div>
   )
@@ -272,7 +272,7 @@ const s = {
   },
   navLinks: { display: 'flex', alignItems: 'center', gap: '1.75rem' },
   navLink: {
-    color: '#6b6b60', textDecoration: 'none', fontSize: 11,
+    color: '#a8ab9f', textDecoration: 'none', fontSize: 12,
     letterSpacing: '0.08em', textTransform: 'uppercase',
   },
   btnPrimary: {
@@ -312,7 +312,7 @@ const s = {
     fontSize: 'clamp(48px, 6.5vw, 88px)', lineHeight: 0.92,
     letterSpacing: '-2px', marginBottom: '1.5rem',
   },
-  heroSub: { fontSize: 14, color: '#6b6b60', lineHeight: 1.8, maxWidth: 420, marginBottom: '2rem' },
+  heroSub: { fontSize: 16, color: '#b1b4aa', lineHeight: 1.85, maxWidth: 500, marginBottom: '2rem' },
   heroCta: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' },
   heroStats: {
     display: 'flex', gap: '2rem', marginTop: '2.5rem',
@@ -333,7 +333,7 @@ const s = {
   },
   termDots: { display: 'flex', gap: 6 },
   dot: { width: 9, height: 9, borderRadius: '50%', display: 'inline-block' },
-  termTitle: { fontSize: 11, color: '#6b6b60', letterSpacing: '0.06em' },
+  termTitle: { fontSize: 11, color: '#9a9d92', letterSpacing: '0.06em' },
   termBody: { padding: 18, fontSize: 13 },
   cursor: {
     display: 'inline-block', width: 8, height: 13,
@@ -343,13 +343,13 @@ const s = {
   matchCard: { marginTop: 10, border: '1px solid #1e1e1e', padding: 14, background: '#161616' },
   matchHeader: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    marginBottom: 10, fontSize: 10, color: '#6b6b60',
+    marginBottom: 10, fontSize: 10, color: '#9a9d92',
     textTransform: 'uppercase', letterSpacing: '0.08em',
   },
   matchStatus: { color: '#c8ff00', border: '1px solid rgba(200,255,0,0.25)', padding: '2px 7px', fontSize: 10 },
   matchPlayers: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' },
   playerName: { fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, color: '#e8e8e0' },
-  playerRating: { fontSize: 10, color: '#6b6b60' },
+  playerRating: { fontSize: 10, color: '#9a9d92' },
   scoreRow: {
     fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 26,
     display: 'flex', alignItems: 'center', gap: 8,
@@ -357,7 +357,7 @@ const s = {
   matchFooter: {
     marginTop: 10, paddingTop: 10, borderTop: '1px solid #1e1e1e',
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    fontSize: 10, color: '#6b6b60',
+    fontSize: 10, color: '#9a9d92',
   },
   section: {
     position: 'relative', zIndex: 1, padding: '5rem 2rem',
@@ -390,7 +390,7 @@ const s = {
     fontFamily: "'Syne', sans-serif", fontWeight: 700,
     fontSize: 16, color: '#e8e8e0', marginBottom: '0.5rem',
   },
-  stepDesc: { fontSize: 13, color: '#6b6b60', lineHeight: 1.7 },
+  stepDesc: { fontSize: 14, color: '#a4a89d', lineHeight: 1.8, maxWidth: 360 },
   stepArrow: {
     position: 'absolute', bottom: '1.25rem', right: '1.25rem',
     fontSize: 18, transition: 'color 0.2s, transform 0.2s',
@@ -412,7 +412,7 @@ const s = {
     fontFamily: "'Syne', sans-serif", fontWeight: 700,
     fontSize: 17, color: '#e8e8e0', marginBottom: '0.5rem',
   },
-  featureDesc: { fontSize: 13, color: '#6b6b60', lineHeight: 1.7 },
+  featureDesc: { fontSize: 14, color: '#a4a89d', lineHeight: 1.8, maxWidth: 520 },
   ctaSection: {
     position: 'relative', zIndex: 1, padding: '5rem 2rem',
     borderTop: '1px solid #1e1e1e', background: '#111',
@@ -426,5 +426,6 @@ const s = {
   footer: {
     position: 'relative', zIndex: 1, borderTop: '1px solid #1e1e1e',
     padding: '1.5rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    gap: '1rem', flexWrap: 'wrap',
   },
 }

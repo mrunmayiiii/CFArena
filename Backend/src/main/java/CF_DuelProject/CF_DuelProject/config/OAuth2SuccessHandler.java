@@ -24,38 +24,30 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     JwtService jwtService;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request,
-                                        HttpServletResponse response,
-                                        Authentication authentication) throws IOException {
+public void onAuthenticationSuccess(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    Authentication authentication) throws IOException {
 
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+    OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
+    String email = oAuth2User.getAttribute("email");
+    String name = oAuth2User.getAttribute("name");
 
-        System.out.println("OAuth Login Success");
-        System.out.println("Email: " + email);
-        System.out.println("Name: " + name);
+    User user = userRepository.findByEmail(email)
+            .orElseGet(() -> {
+                User u = new User();
+                u.setEmail(email);
+                u.setName(name);
+                u.setProvider("GOOGLE");
+                return userRepository.save(u);
+            });
 
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User u = new User();
-                    u.setEmail(email);
-                    u.setName(name);
-                    u.setProvider("GOOGLE");
-                    return userRepository.save(u);
-                });
+    String token = jwtService.generateToken(email);
+    System.out.println("JWT Token: " + token);
 
-        String token = jwtService.generateToken(email);
-
-        System.out.println("JWT Token: " + token);
-
-        // ✅ Send response directly (no redirect)
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-
-        String jsonResponse = "{ \"token\": \"" + token + "\" }";
-        response.getWriter().write(jsonResponse);
-        response.getWriter().flush();
-    }
+    String redirectUrl = "http://localhost:5173/auth/callback?token=" + token;
+    
+    // ✅ Use this instead of response.sendRedirect
+    getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+}
 }

@@ -33,8 +33,9 @@ axiosInstance.interceptors.response.use(
     // Handle common errors globally
     if (error.response) {
       if (error.response.status === 401) {
-        // Redirect to login page
-        window.location.href = "/";
+        // Do not force redirect here. Let page-level handlers decide the UX.
+        // This avoids abrupt navigation during match polling/start flows.
+        console.warn("Unauthorized request:", error.config?.url || "unknown-endpoint");
       } else if (error.response.status === 500) {
         console.error("Server error. Please try again later.");
       }

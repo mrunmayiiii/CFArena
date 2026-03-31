@@ -1,10 +1,21 @@
 //export const BASE_URL = import.meta.env.VITE_BASE_URL;
-export const BASE_URL= "http://127.0.0.1:8000"
+export const BASE_URL = 'http://localhost:8080'
 export const API_PATHS = {
   AUTH: {
     REGISTER: "/auth/register",
-    LOGIN: "/auth/login", 
-  }
-
-
+    LOGIN: "/auth/login",
+    OAUTH: "oauth2/authorization/google",
+  },
+  USER: {
+    ADD_CF_HANDLE: '/user/add-cf',
+  },
+  MATCH: {
+    CREATE: '/api/match/create',
+    JOIN: '/api/match/join',
+    START: '/api/match/start',
+    STATUS: '/api/match/status',
+  },
+  DEBUG: {
+    ACTIVE_MATCHES: '/test',
+  },
 };
