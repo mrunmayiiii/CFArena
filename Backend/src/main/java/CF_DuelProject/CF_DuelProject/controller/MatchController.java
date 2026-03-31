@@ -11,6 +11,8 @@ import CF_DuelProject.CF_DuelProject.model.MatchSecondary;
 import CF_DuelProject.CF_DuelProject.service.MatchService;
 import CF_DuelProject.CF_DuelProject.service.UserService;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("api/match")
 public class MatchController {
@@ -55,5 +57,10 @@ public class MatchController {
         String cfHandle = userService.getCfHandleByEmail(email);
 
         return matchService.startMatch(cfHandle, inviteCode);
+    }
+
+    @GetMapping("/status")
+    public Map<String, Object> getStatus(@RequestParam String inviteCode) {
+        return matchService.getMatchStatus(inviteCode);
     }
 }

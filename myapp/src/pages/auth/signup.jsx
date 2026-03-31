@@ -1,0 +1,166 @@
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import axiosInstance from '../../utils/axiosInstance'
+import { API_PATHS , BASE_URL } from '../../utils/apiPaths'
+import './auth.css'
+
+const initialForm = {
+  name: '',
+  email: '',
+  password: '',
+  cfHandle: '',
+}
+
+export default function Signup() {
+  const [form, setForm] = useState(initialForm)
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigate = useNavigate()
+
+  const onChange = (event) => {
+    const { name, value } = event.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleGoogleLogin = () => {
+  window.location.href = `${BASE_URL}/${API_PATHS.AUTH.OAUTH}`  // ✅ uses localhost:8080
+}
+
+  const onSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim() || !form.cfHandle.trim()) {
+      setError('All fields are required.')
+      return
+    }
+
+    if (form.password.length < 6) {
+      setError('Password should be at least 6 characters.')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        cfHandle: form.cfHandle.trim(),
+      })
+
+      navigate('/login', {
+        replace: true,
+        state: { justRegistered: true },
+      })
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        'Unable to create account right now. Please try again.'
+      setError(typeof message === 'string' ? message : 'Signup failed.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-shell">
+        <aside className="auth-brand">
+          <p className="auth-mini">CF ARENA</p>
+          <h1>
+            Build your duel identity
+            <br />
+            and enter the arena.
+          </h1>
+          <p className="auth-subtitle">
+            Create your account, link your handle, and start challenging your Codeforces rivals.
+          </p>
+        </aside>
+
+        <article className="auth-card">
+          <h2>Create account</h2>
+
+          <div className="auth-segment">
+            <Link to="/login" className="is-inactive">
+              Login
+            </Link>
+            <Link to="/signup" className="is-active">
+              Signup
+            </Link>
+          </div>
+
+          <form className="auth-form" onSubmit={onSubmit}>
+            <div className="auth-field">
+              <label htmlFor="name">Name</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Your name"
+                value={form.name}
+                onChange={onChange}
+                autoComplete="name"
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="name@example.com"
+                value={form.email}
+                onChange={onChange}
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="cfHandle">Codeforces Handle</label>
+              <input
+                id="cfHandle"
+                name="cfHandle"
+                type="text"
+                placeholder="tourist"
+                value={form.cfHandle}
+                onChange={onChange}
+                autoComplete="username"
+              />
+            </div>
+
+            <div className="auth-field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Create password"
+                value={form.password}
+                onChange={onChange}
+                autoComplete="new-password"
+              />
+            </div>
+
+            {error ? <p className="auth-error">{error}</p> : null}
+
+            <button type="submit" className="auth-action" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating account...' : 'Create account'}
+            </button>
+
+            <p className="auth-split">or</p>
+            <button type="button" className="auth-google" onClick={handleGoogleLogin}>
+              Continue with Google
+            </button>
+
+            <p className="auth-note">
+              Already have an account? <Link to="/login">Sign in</Link>
+            </p>
+          </form>
+        </article>
+      </section>
+    </main>
+  )
+}

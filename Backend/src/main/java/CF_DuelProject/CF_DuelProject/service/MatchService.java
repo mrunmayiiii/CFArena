@@ -20,6 +20,13 @@ import CF_DuelProject.CF_DuelProject.repository.PrimaryMatchRepository;
 import CF_DuelProject.CF_DuelProject.repository.SecondaryMatchRepository;
 import lombok.RequiredArgsConstructor;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 @Service
 @RequiredArgsConstructor
 public class MatchService {
@@ -286,6 +293,52 @@ private void finishMatch(String matchId) {
         matchRepository2.delete(match);
         publishMatchUpdate(saved);
         return saved;
+    }
+
+    public Map<String, Object> getMatchStatus(String inviteCode) {
+        String normalizedCode = inviteCode == null ? "" : inviteCode.trim();
+
+        Optional<MatchPrimary> primary = matchRepository.findByInviteCode(normalizedCode);
+        if (primary.isPresent()) {
+            MatchPrimary m = primary.get();
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("source", "PRIMARY");
+            payload.put("id", m.getId());
+            payload.put("inviteCode", m.getInviteCode());
+            payload.put("status", m.getStatus());
+            payload.put("user1", m.getUser1());
+            payload.put("user2", m.getUser2());
+            payload.put("score1", m.getScore1());
+            payload.put("score2", m.getScore2());
+            payload.put("curIdx", m.getCurIdx());
+            payload.put("winnerId", m.getWinnerId());
+            payload.put("problems", m.getProblems());
+            payload.put("startTime", m.getStartTime());
+            payload.put("endTime", m.getEndTime());
+            return payload;
+        }
+
+        Optional<MatchSecondary> secondary = matchRepository2.findByInviteCode(normalizedCode);
+        if (secondary.isPresent()) {
+            MatchSecondary m = secondary.get();
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("source", "SECONDARY");
+            payload.put("id", m.getId());
+            payload.put("inviteCode", m.getInviteCode());
+            payload.put("status", m.getStatus());
+            payload.put("user1", m.getUser1());
+            payload.put("user2", m.getUser2());
+            payload.put("score1", m.getScore1());
+            payload.put("score2", m.getScore2());
+            payload.put("curIdx", m.getCurIdx());
+            payload.put("winnerId", m.getWinnerId());
+            payload.put("problems", m.getProblems());
+            payload.put("startTime", m.getStartTime());
+            payload.put("endTime", m.getEndTime());
+            return payload;
+        }
+
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found for invite code");
     }
 
 }
