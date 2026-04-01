@@ -1,10 +1,13 @@
-import { useState } from 'react'
+
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATHS, BASE_URL } from '../../utils/apiPaths'
 import './auth.css'
-
+import { useState, useContext } from 'react'
+import { AuthContext } from '../../context/AuthContext'
 export default function Login() {
+ const { login } = useContext(AuthContext)
+
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -41,9 +44,8 @@ export default function Login() {
       if (!token) {
         throw new Error('Invalid auth response from server.')
       }
-
-      localStorage.setItem('token', token)
-      navigate('/dashboard', { replace: true })
+        login(token)   // ✅ updates context + localStorage
+        navigate('/dashboard', { replace: true })
     } catch (err) {
       const message =
         err?.response?.data?.message ||

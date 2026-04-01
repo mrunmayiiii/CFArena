@@ -4,10 +4,13 @@ import Login from './pages/auth/login'
 import Signup from './pages/auth/signup'
 import OAuthCallback from './pages/auth/OAuthCallback'
 import Dashboard from './pages/Dashboard'
-import MatchCreate from './pages/match/MatchCreate'
-import MatchJoin from './pages/match/MatchJoin'
-import MatchRoom from './pages/match/MatchRoom'
-import Results from './pages/match/Results'
+// import MatchCreate from './pages/match/MatchCreate'
+// import MatchJoin from './pages/match/MatchJoin'
+// import MatchRoom from './pages/match/MatchRoom'
+// import Results from './pages/match/Results'
+
+import { useContext } from "react";
+import { AuthContext } from "./context/AuthContext";
 
 /* ── Global styles injected once ─────────────────────────────────────────── */
 const globalCSS = `
@@ -53,37 +56,82 @@ const globalCSS = `
   ::-webkit-scrollbar-thumb:hover { background: #3d3d3d; }
 `
 
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style')
-  style.textContent = globalCSS
-  document.head.appendChild(style)
+if (typeof document !== "undefined") {
+  const style = document.createElement("style");
+  style.innerHTML = globalCSS;
+  document.head.appendChild(style);
 }
-
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token')
-  return token ? children : <Navigate to="/login" replace />
-}
+  const { userToken, loading } = useContext(AuthContext);
 
-export default function App() {
+  if (loading) return <div>Loading...</div>;
+
+  return userToken ? children : <Navigate to="/login" replace />;
+};
+
+function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
-        <Route path="/"        element={<Landing />} />
-        <Route path="/login"   element={<Login />} />
-        <Route path="/signup"  element={<Signup />} />
+
+        {/* 🌐 Public Routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/auth/callback" element={<OAuthCallback />} />
 
-        {/* Protected */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/match/create" element={<ProtectedRoute><MatchCreate /></ProtectedRoute>} />
-        <Route path="/match/join" element={<ProtectedRoute><MatchJoin /></ProtectedRoute>} />
-        <Route path="/match/:inviteCode" element={<ProtectedRoute><MatchRoom /></ProtectedRoute>} />
-        <Route path="/results/:matchId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
+        {/* 🔒 Protected Routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Fallback */}
+        {/* <Route
+          path="/match/create"
+          element={
+            <ProtectedRoute>
+              <MatchCreate />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/match/join"
+          element={
+            <ProtectedRoute>
+              <MatchJoin />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/match/:inviteCode"
+          element={
+            <ProtectedRoute>
+              <MatchRoom />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/results/:matchId"
+          element={
+            <ProtectedRoute>
+              <Results />
+            </ProtectedRoute>
+          }
+        /> */}
+
+        {/* 🔁 Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </BrowserRouter>
-  )
+  );
 }
+
+export default App;

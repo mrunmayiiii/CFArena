@@ -14,14 +14,26 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const accessToken = localStorage.getItem("token");
-    if (accessToken) {
+
+    // ✅ Public routes where token should NOT be sent
+    const publicRoutes = [
+      "/auth/login",
+      "/auth/register",
+      "/oauth2",
+    ];
+
+    const isPublic = publicRoutes.some((route) =>
+      config.url?.includes(route)
+    );
+
+    // ✅ Attach token ONLY for protected routes
+    if (!isPublic && accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response Interceptor

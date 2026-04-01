@@ -21,9 +21,13 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
-        
+       try{ System.out.println("REGISTER API HIT"); 
         authService.register(req);
-        return ResponseEntity.ok("User registered");
+        return ResponseEntity.ok("User registered");}
+        catch (Exception e) {
+        e.printStackTrace(); // 👈 check what's actually throwing
+        return ResponseEntity.status(500).body(e.getMessage());
+    }
     }
 
     @PostMapping("/login")

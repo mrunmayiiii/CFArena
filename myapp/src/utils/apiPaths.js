@@ -7,6 +7,7 @@ export const API_PATHS = {
     OAUTH: "oauth2/authorization/google",
   },
   USER: {
+    ME: '/user/me',  
     ADD_CF_HANDLE: '/user/add-cf',
   },
   MATCH: {

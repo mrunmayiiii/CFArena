@@ -25,83 +25,11 @@ const FEATURES = [
   { tag: 'Flexible',            title: 'Custom match duration',   desc: 'Set the clock from 15 to 120 minutes. Quick blitz or full competitive grinding.' },
 ]
 
-function TerminalWidget() {
-  return (
-    <div style={s.terminal}>
-      <div style={s.termAccent} />
-      <div style={s.termBar}>
-        <div style={s.termDots}>
-          <span style={{ ...s.dot, background: '#ff5f57' }} />
-          <span style={{ ...s.dot, background: '#ffbd2e' }} />
-          <span style={{ ...s.dot, background: '#28ca41' }} />
-        </div>
-        <span style={s.termTitle}>cf_duel — live match</span>
-        <span />
-      </div>
-      <div style={s.termBody}>
-        <TermLine cmd="cf_duel create --duration 30m" />
-        <TermOut color="#28ca41">✓ Match created · code: XK7P2R</TermOut>
-        <TermLine cmd="cf_duel start XK7P2R" />
-        <TermOut color="#28ca41">▶ Problems: 1400, 1600, 1800, 2000, 2200</TermOut>
-        <MatchCard />
-        <div style={{ marginTop: 14, display: 'flex', gap: 10 }}>
-          <span style={{ color: '#c8ff00' }}>$</span>
-          <span style={s.cursor} />
-        </div>
-      </div>
-    </div>
-  )
-}
 
-function TermLine({ cmd }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, marginBottom: 6 }}>
-      <span style={{ color: '#c8ff00', flexShrink: 0 }}>$</span>
-      <span style={{ color: '#e8e8e0' }}>{cmd}</span>
-    </div>
-  )
-}
 
-function TermOut({ children, color }) {
-  return (
-    <div style={{ paddingLeft: 20, marginBottom: 10, color: color || '#9a9d92', fontSize: 13 }}>
-      {children}
-    </div>
-  )
-}
 
-function MatchCard() {
-  return (
-    <div style={s.matchCard}>
-      <div style={s.matchHeader}>
-        <span>Match #4821</span>
-        <span style={s.matchStatus}>● LIVE</span>
-      </div>
-      <div style={s.matchPlayers}>
-        <div>
-          <div style={s.playerName}>tourist</div>
-          <div style={s.playerRating}>★ 3979</div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={s.scoreRow}>
-            <span style={{ color: '#c8ff00' }}>2</span>
-            <span style={{ color: '#3d3d3d', fontSize: 18 }}>—</span>
-            <span style={{ color: '#ff4d4d' }}>1</span>
-          </div>
-          <div style={{ fontSize: 11, color: '#6b6b60' }}>prob 4/5</div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={s.playerName}>jiangly</div>
-          <div style={s.playerRating}>★ 3621</div>
-        </div>
-      </div>
-      <div style={s.matchFooter}>
-        <span>Div.1 · 1875D</span>
-        <span style={{ color: '#00c8ff', fontWeight: 700 }}>12:47 left</span>
-      </div>
-    </div>
-  )
-}
+
+
 
 export default function Landing() {
   const [navSolid, setNavSolid] = useState(false)
@@ -129,29 +57,25 @@ export default function Landing() {
 
       {/* HERO */}
       <section style={s.hero}>
-        <div style={s.heroInner}>
-          <div>
-            <p style={s.eyebrow}>
-              <span style={s.eyebrowDot} /> Real-time 1v1 Codeforces Duels
-            </p>
-            <h1 style={s.h1}>
-              <span style={{ display: 'block', color: '#e8e8e0' }}>PROVE</span>
-              <span style={{ display: 'block', color: '#c8ff00' }}>YOU&apos;RE</span>
-              <span style={{ display: 'block', WebkitTextStroke: '1px #707768', color: 'rgba(176,184,168,0.26)', textShadow: '0 0 10px rgba(120,130,112,0.2)' }}>BETTER.</span>
-            </h1>
-            <p style={s.heroSub}>
-              Challenge any Codeforces user to a live 1v1 duel.
-              Race through curated problems and settle the ranking debate with real match pressure.
-            </p>
-            <div style={s.heroCta}>
-              <a href="/signup" style={s.btnPrimary}>Start dueling →</a>
-              <a href="/login"  style={s.btnGhost}>I have an account</a>
-            </div>
-           
-          </div>
-          <TerminalWidget />
+      <div style={s.heroInner}>
+        <p style={s.eyebrow}>
+          <span style={s.eyebrowDot} /> Real-time 1v1 Codeforces Duels
+        </p>
+        <h1 style={s.h1}>
+          <span style={{ display: 'block', color: '#e8e8e0' }}>PROVE</span>
+          <span style={{ display: 'block', color: '#c8ff00' }}>YOU&apos;RE</span>
+          <span style={{ display: 'block', WebkitTextStroke: '1px #707768', color: 'rgba(176,184,168,0.26)', textShadow: '0 0 10px rgba(120,130,112,0.2)' }}>BETTER.</span>
+        </h1>
+        <p style={s.heroSub}>
+          Challenge any Codeforces user to a live 1v1 duel.
+          Race through curated problems and settle the ranking debate with real match pressure.
+        </p>
+        <div style={s.heroCta}>
+          <a href="/signup" style={s.btnPrimary}>Start dueling →</a>
+          <a href="/login" style={s.btnGhost}>I have an account</a>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* HOW IT WORKS */}
       <section style={s.section} id="how-it-works">
@@ -295,8 +219,17 @@ const s = {
     padding: '80px 2rem 4rem', zIndex: 1,
   },
   heroInner: {
-    maxWidth: 1140, margin: '0 auto', width: '100%',
-    display: 'grid', gridTemplateColumns: '1fr 460px', gap: '4rem', alignItems: 'center',
+  maxWidth: 800, margin: '0 auto', width: '100%',
+  display: 'flex', flexDirection: 'column', alignItems: 'center',
+  textAlign: 'center',
+  },
+  heroSub: {
+    fontSize: 16, color: '#b1b4aa', lineHeight: 1.85,
+    maxWidth: 560, margin: '0 auto 2rem', textAlign: 'center',
+  },
+  heroCta: {
+    display: 'flex', alignItems: 'center',
+    justifyContent: 'center', gap: '1rem', flexWrap: 'wrap',
   },
   eyebrow: {
     display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -312,8 +245,6 @@ const s = {
     fontSize: 'clamp(48px, 6.5vw, 88px)', lineHeight: 0.92,
     letterSpacing: '-2px', marginBottom: '1.5rem',
   },
-  heroSub: { fontSize: 16, color: '#b1b4aa', lineHeight: 1.85, maxWidth: 500, marginBottom: '2rem' },
-  heroCta: { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' },
   heroStats: {
     display: 'flex', gap: '2rem', marginTop: '2.5rem',
     paddingTop: '2rem', borderTop: '1px solid #1e1e1e',
@@ -340,7 +271,6 @@ const s = {
     background: '#c8ff00', verticalAlign: 'middle',
     animation: 'blink 1s step-end infinite',
   },
-  matchCard: { marginTop: 10, border: '1px solid #1e1e1e', padding: 14, background: '#161616' },
   matchHeader: {
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     marginBottom: 10, fontSize: 10, color: '#9a9d92',

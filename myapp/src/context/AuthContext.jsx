@@ -3,8 +3,10 @@ import { createContext, useState, useEffect } from "react";
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [userToken, setUserToken] = useState(null);
-  const [loading, setLoading] = useState(true); // add loading state
+const [userToken, setUserToken] = useState(
+  localStorage.getItem('token') // ✅ reads existing token on mount
+)  
+const [loading, setLoading] = useState(true); // add loading state
 
   useEffect(() => {
     const token = localStorage.getItem("token");
