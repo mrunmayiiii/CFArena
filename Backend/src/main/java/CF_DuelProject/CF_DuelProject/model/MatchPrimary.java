@@ -7,7 +7,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Document(collection = "primary_matches")
@@ -28,5 +30,7 @@ public class MatchPrimary {
     private Date endTime;
     @Indexed(unique = true)
     private String inviteCode;
+    private Map<Integer, String> player1Results = new HashMap<>();
+    private Map<Integer, String> player2Results = new HashMap<>();
 
 }

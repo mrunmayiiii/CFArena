@@ -130,8 +130,12 @@ public class MatchService {
 
         if (winner.equals(match.getUser1())) {
             update.inc("score1", 1);
+            update.set("player1Results." + expectedIdx, "SOLVED");
+            update.set("player2Results." + expectedIdx, "—");
         } else {
             update.inc("score2", 1);
+            update.set("player2Results." + expectedIdx, "SOLVED");
+            update.set("player1Results." + expectedIdx, "—");
         }
 
         update.inc("curIdx", 1);
@@ -179,7 +183,8 @@ private void finishMatch(String matchId) {
         newMatch.setEndTime(match.getEndTime());
 
         newMatch.setInviteCode(match.getInviteCode());
-
+        newMatch.setPlayer1Results(match.getPlayer1Results());
+    newMatch.setPlayer2Results(match.getPlayer2Results());
         // save to secondary
         MatchSecondary saved = matchRepository2.save(newMatch);
 
@@ -315,6 +320,8 @@ private void finishMatch(String matchId) {
             payload.put("problems", m.getProblems());
             payload.put("startTime", m.getStartTime());
             payload.put("endTime", m.getEndTime());
+            payload.put("player1Results", m.getPlayer1Results());
+            payload.put("player2Results", m.getPlayer2Results());
             return payload;
         }
 
@@ -335,6 +342,9 @@ private void finishMatch(String matchId) {
             payload.put("problems", m.getProblems());
             payload.put("startTime", m.getStartTime());
             payload.put("endTime", m.getEndTime());
+            payload.put("player1Results", m.getPlayer1Results());
+            payload.put("player2Results", m.getPlayer2Results());
+       
             return payload;
         }
 

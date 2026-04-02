@@ -5,98 +5,255 @@ import { API_PATHS } from '../../utils/apiPaths'
 import Navbar from '../../components/Navbar'
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .rs { min-height: 100vh; background: #0a0a0a; color: #e8e8e0; font-family: 'Space Mono', monospace; display: flex; flex-direction: column; }
-  .rs-main { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 48px 24px 80px; }
+  :root {
+    --bg:        #09090b;
+    --surface:   #0f0f12;
+    --panel:     #111114;
+    --border:    #1e1e24;
+    --border2:   #2a2a33;
+    --accent:    #c8ff00;
+    --accent-10: rgba(200,255,0,0.07);
+    --accent-20: rgba(200,255,0,0.18);
+    --accent-dim: rgba(200,255,0,0.55);
+    --text:      #eeeef2;
+    --muted:     #46464f;
+    --muted2:    #7a7a88;
+    --danger:    #f87171;
+    --warn:      #fb923c;
+    --mono:      'IBM Plex Mono', monospace;
+    --radius:    4px;
+  }
 
-  /* ── Hero ── */
-  .rs-eyebrow { font-size: 11px; color: #555; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 16px; text-align: center; }
-  .rs-title { font-family: 'Syne', sans-serif; font-size: clamp(40px, 7vw, 80px); font-weight: 800; letter-spacing: -0.03em; text-align: center; line-height: 0.95; margin-bottom: 12px; }
-  .rs-winner-name { color: #c8ff00; }
-  .rs-draw-txt { color: #ff6b00; }
-  .rs-subtitle { font-size: 13px; color: #555; letter-spacing: 0.1em; text-align: center; margin-bottom: 52px; }
+  .rs { min-height:100vh; background:var(--bg); color:var(--text); font-family:var(--mono); display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
+  .rs-main { flex:1; display:flex; flex-direction:column; align-items:center; padding:52px 20px 80px; }
+  .rs-inner { width:100%; max-width:860px; display:flex; flex-direction:column; gap:12px; }
 
-  /* ── Main card ── */
-  .rs-card { width: 100%; max-width: 640px; border: 1px solid #1e1e1e; background: #0d0d0d; border-radius: 2px; overflow: hidden; position: relative; }
-  .rs-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #c8ff0060, transparent); pointer-events: none; }
+  /* ── Loading ── */
+  .rs-loading { display:flex; flex-direction:column; align-items:center; gap:16px; padding:100px 0; color:var(--muted2); font-size:13px; letter-spacing:0.1em; }
+  .rs-spinner { width:28px; height:28px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:rsSpin 0.9s linear infinite; }
+  @keyframes rsSpin { to { transform:rotate(360deg); } }
 
-  /* Score section */
-  .rs-score-row { display: flex; align-items: stretch; }
-  .rs-player { flex: 1; padding: 36px 28px; text-align: center; }
-  .rs-player.winner-bg { background: #0f120a; }
-  .rs-player.loser-bg { background: #0a0a0a; }
-  .rs-result-tag { display: inline-block; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; padding: 5px 14px; border-radius: 1px; margin-bottom: 16px; }
-  .rs-result-tag.win { color: #c8ff00; background: #0f120a; border: 1px solid #c8ff0040; }
-  .rs-result-tag.lose { color: #555; background: #111; border: 1px solid #2a2a2a; }
-  .rs-result-tag.draw { color: #ff6b00; background: #120d0a; border: 1px solid #ff6b0040; }
-  .rs-player-handle { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 6px; word-break: break-all; }
-  .rs-you-note { font-size: 10px; color: #c8ff00; letter-spacing: 0.12em; margin-bottom: 16px; }
-  .rs-player-score { font-family: 'Syne', sans-serif; font-size: 72px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
-  .rs-player-score.won { color: #c8ff00; }
-  .rs-player-score.lost { color: #333; }
-  .rs-player-score.tied { color: #ff6b00; }
-  .rs-score-lbl { font-size: 11px; color: #555; letter-spacing: 0.12em; text-transform: uppercase; }
+  /* ── Verdict ── */
+  .rs-verdict { text-align:center; padding-bottom:24px; }
+  .rs-eyebrow { font-size:10px; color:var(--muted2); letter-spacing:0.22em; text-transform:uppercase; margin-bottom:14px; display:inline-flex; align-items:center; gap:10px; }
+  .rs-eyebrow::before,.rs-eyebrow::after { content:''; display:inline-block; width:32px; height:1px; background:var(--border2); }
+  .rs-verdict-main { font-family:var(--mono); font-size:clamp(44px,10vw,72px); font-weight:600; line-height:0.95; letter-spacing:-0.02em; margin-bottom:12px; }
+  .rs-verdict-main .winner { color:var(--accent); }
+  .rs-verdict-main .draw   { color:var(--warn); }
+  .rs-verdict-sub { font-size:11px; color:var(--muted2); letter-spacing:0.18em; text-transform:uppercase; }
 
-  .rs-divider-v { width: 1px; background: #1e1e1e; align-self: stretch; }
+  /* ── Battle: two cards + VS spine ── */
+  .rs-battle {
+    display: grid;
+    grid-template-columns: 1fr 64px 1fr;
+    align-items: stretch;
+  }
 
-  /* Meta */
-  .rs-meta { border-top: 1px solid #1e1e1e; display: grid; grid-template-columns: 1fr 1fr; }
-  .rs-meta-item { padding: 20px 28px; border-right: 1px solid #1e1e1e; border-bottom: 1px solid #1e1e1e; }
-  .rs-meta-item:nth-child(even) { border-right: none; }
-  .rs-meta-item:nth-last-child(-n+2) { border-bottom: none; }
-  .rs-meta-key { font-size: 11px; color: #555; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
-  .rs-meta-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: #e8e8e0; }
+  /* Player card */
+  .rs-pcard {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .rs-pcard.win { border-color: rgba(200,255,0,0.22); }
 
-  /* Problems */
-  .rs-problems { border-top: 1px solid #1e1e1e; padding: 28px; }
-  .rs-prob-title { font-size: 11px; color: #555; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 20px; }
-  .rs-prob-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid #111; }
+  .rs-pcard-head {
+    padding: 26px 24px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 9px;
+    position: relative; overflow: hidden;
+  }
+  .rs-pcard.win .rs-pcard-head { background: var(--accent-10); }
+  .rs-pcard.win .rs-pcard-head::after {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent);
+  }
+
+  .rs-result-pill {
+    display: inline-block; align-self: flex-start;
+    font-size: 9px; letter-spacing:0.18em; text-transform:uppercase;
+    padding: 3px 10px; border-radius: 2px; border: 1px solid;
+  }
+  .rs-result-pill.win  { color:var(--accent); border-color:var(--accent-20);       background:var(--accent-10); }
+  .rs-result-pill.lose { color:var(--muted2); border-color:var(--border2);          background:transparent; }
+  .rs-result-pill.draw { color:var(--warn);   border-color:rgba(251,146,60,0.25);   background:rgba(251,146,60,0.06); }
+
+  .rs-pcard-handle { font-family:var(--mono); font-size:20px; font-weight:600; letter-spacing:-0.01em; line-height:1.1; word-break:break-all; }
+  .rs-you-tag { font-size:9px; color:var(--accent-dim); letter-spacing:0.16em; text-transform:uppercase; }
+
+  .rs-score-row { display:flex; align-items:baseline; gap:9px; margin-top:2px; }
+  .rs-big-score { font-family:var(--mono); font-size:60px; font-weight:400; line-height:1; letter-spacing:-0.02em; }
+  .rs-big-score.win  { color:var(--accent); }
+  .rs-big-score.lose { color:var(--border2); }
+  .rs-big-score.draw { color:var(--warn); }
+  .rs-score-lbl { font-size:10px; color:var(--muted2); letter-spacing:0.16em; text-transform:uppercase; }
+
+  /* Problem breakdown */
+  .rs-pcard-body { flex:1; }
+  .rs-pcard-body-head {
+    padding: 10px 20px;
+    font-size: 10px; color:var(--muted);
+    letter-spacing:0.2em; text-transform:uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .rs-prob-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background .12s;
+  }
   .rs-prob-row:last-child { border-bottom: none; }
-  .rs-prob-num { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: #333; width: 32px; flex-shrink: 0; }
-  .rs-prob-name { font-size: 15px; color: #888; flex: 1; }
-  .rs-prob-cf { font-size: 12px; color: #c8ff00; border: 1px solid #c8ff0030; padding: 6px 14px; border-radius: 1px; text-decoration: none; letter-spacing: 0.06em; transition: border-color .15s, background .15s; }
-  .rs-prob-cf:hover { border-color: #c8ff00; background: #c8ff0010; }
+  .rs-prob-row:hover { background: rgba(255,255,255,0.015); }
 
-  /* Actions */
-  .rs-actions { border-top: 1px solid #1e1e1e; padding: 24px 28px; display: flex; gap: 12px; }
-  .rs-btn-ghost { font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #888; background: none; border: 1px solid #2a2a2a; padding: 16px 24px; border-radius: 2px; cursor: crosshair; transition: color .15s, border-color .15s; flex: 1; }
-  .rs-btn-ghost:hover { color: #e8e8e0; border-color: #555; }
-  .rs-btn-cta { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #0a0a0a; background: #c8ff00; border: none; padding: 16px 24px; border-radius: 2px; cursor: crosshair; transition: opacity .15s; flex: 2; }
-  .rs-btn-cta:hover { opacity: 0.88; }
+  .rs-prob-n {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .rs-prob-n.ac   { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 
-  .rs-loading { text-align: center; font-size: 14px; color: #555; letter-spacing: 0.1em; padding: 80px 0; }
+  .rs-prob-label { flex:1; font-size:12px; color:var(--muted2); }
 
-  @media (max-width: 520px) {
-    .rs-score-row { flex-direction: column; }
-    .rs-divider-v { width: auto; height: 1px; }
-    .rs-meta { grid-template-columns: 1fr; }
-    .rs-meta-item { border-right: none !important; }
-    .rs-meta-item:nth-last-child(-n+2) { border-bottom: 1px solid #1e1e1e; }
-    .rs-meta-item:last-child { border-bottom: none; }
-    .rs-actions { flex-direction: column; }
+  .rs-prob-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; letter-spacing:0.1em; text-transform:uppercase;
+    padding: 3px 10px; border-radius: 99px; flex-shrink: 0;
+  }
+  .rs-prob-chip.ac   { color:var(--bg);    background:var(--accent); }
+  .rs-prob-chip.miss { color:var(--muted); background:transparent; border:1px solid var(--border); }
+
+  .rs-cf-link { font-size:11px; color:var(--muted); text-decoration:none; transition:color .15s; flex-shrink:0; }
+  .rs-cf-link:hover { color:var(--accent); }
+
+  /* ── VS spine ── */
+  .rs-vs-col {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    padding-top: 48px; position: relative;
+  }
+  .rs-vs-line {
+    position: absolute; top: 0; bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 1px; background: var(--border); z-index: 0;
+  }
+  .rs-vs-badge {
+    position: relative; z-index: 1;
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: var(--muted2); background: var(--bg);
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    padding: 7px 9px; letter-spacing: 0.1em;
+  }
+
+  /* ── Meta strip ── */
+  .rs-meta {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .rs-meta-item { padding:15px 20px; border-right:1px solid var(--border); }
+  .rs-meta-item:last-child { border-right:none; }
+  .rs-meta-key { font-size:10px; color:var(--muted2); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:5px; }
+  .rs-meta-val { font-family:var(--mono); font-size:18px; font-weight:500; letter-spacing:-0.01em; }
+
+  /* ── Actions ── */
+  .rs-actions { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
+  .rs-btn-ghost { font-family:var(--mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted2); background:none; border:1px solid var(--border2); padding:15px; border-radius:var(--radius); cursor:pointer; transition:color .15s,border-color .15s; }
+  .rs-btn-ghost:hover { color:var(--text); border-color:var(--muted2); }
+  .rs-btn-cta { font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#09090b; background:var(--accent); border:none; padding:15px; border-radius:var(--radius); cursor:pointer; transition:opacity .15s; }
+  .rs-btn-cta:hover { opacity:0.87; }
+
+  @media (max-width:640px) {
+    .rs-battle { grid-template-columns:1fr; }
+    .rs-vs-col { flex-direction:row; padding:0 16px; height:44px; justify-content:flex-start; }
+    .rs-vs-line { top:50%; bottom:auto; left:0; right:0; width:100%; height:1px; transform:none; }
+    .rs-meta { grid-template-columns:1fr 1fr; }
+    .rs-meta-item:nth-child(2) { border-right:none; }
+    .rs-meta-item:nth-child(3) { border-top:1px solid var(--border); border-right:none; grid-column:1/-1; }
+    .rs-actions { grid-template-columns:1fr; }
   }
 `
 
 function cfUrl(pid) {
   if (!pid) return '#'
+  if (pid.startsWith('http')) return pid
   const m = pid.match(/^(\d+)([A-Z].*)$/i)
   if (!m) return `https://codeforces.com/problemset?search=${encodeURIComponent(pid)}`
   return `https://codeforces.com/contest/${m[1]}/problem/${m[2].toUpperCase()}`
 }
 
-function LoadingScreen() {
+/**
+ * Java's Map<Integer, String> serializes to JSON as { "0": "SOLVED", "1": "—", ... }
+ * NOT as an array. We must look up by string key index.
+ *
+ * Also handles the array format as a fallback (future-proofing).
+ * Falls back to score-based check only if results map is absent entirely.
+ */
+function isSolved(resultsMap, index) {
+  if (resultsMap === null || resultsMap === undefined) return null // unknown
+
+  // Array format (just in case backend changes)
+  if (Array.isArray(resultsMap)) {
+    return resultsMap[index] === 'SOLVED'
+  }
+
+  // Object / Map format: keys are integers serialized as strings
+  // Java sends: { "0": "SOLVED", "1": "—", "2": "SOLVED" }
+  const val = resultsMap[index] ?? resultsMap[String(index)]
+  if (val === undefined) return null // problem hasn't been attempted yet
+  return val === 'SOLVED'
+}
+
+function PlayerCard({ handle, isYou, score, results, problems, isWin, isDraw }) {
+  const pillClass  = isWin ? 'win' : isDraw ? 'draw' : 'lose'
+  const scoreClass = isWin ? 'win' : isDraw ? 'draw' : 'lose'
+
   return (
-    <>
-      <style>{css}</style>
-      <div className="rs">
-        <Navbar />
-        <main className="rs-main">
-          <div className="rs-loading">Loading results…</div>
-        </main>
+    <div className={`rs-pcard ${isWin ? 'win' : ''}`}>
+      <div className="rs-pcard-head">
+        <span className={`rs-result-pill ${pillClass}`}>
+          {isDraw ? 'draw' : isWin ? 'winner' : 'defeated'}
+        </span>
+        <div className="rs-pcard-handle">{handle || '—'}</div>
+        {isYou && <div className="rs-you-tag">you</div>}
+        <div className="rs-score-row">
+          <div className={`rs-big-score ${scoreClass}`}>{score}</div>
+          <div className="rs-score-lbl">solved</div>
+        </div>
       </div>
-    </>
+
+      <div className="rs-pcard-body">
+        <div className="rs-pcard-body-head">Problems</div>
+        {problems.map((pid, i) => {
+          // isSolved returns: true | false | null (not yet played)
+          const solvedState = isSolved(results, i)
+          // If results map exists but key is absent → not reached → show miss
+          // If results map is null entirely → fall back to score
+          const ac = solvedState !== null ? solvedState : i < score
+
+          return (
+            <div className="rs-prob-row" key={i}>
+              <span className={`rs-prob-n ${ac ? 'ac' : ''}`}>{i + 1}</span>
+              <span className="rs-prob-label">Problem {i + 1}</span>
+              <span className={`rs-prob-chip ${ac ? 'ac' : 'miss'}`}>
+                {ac ? '✓ AC' : '—'}
+              </span>
+              <a className="rs-cf-link" href={cfUrl(pid)} target="_blank" rel="noreferrer">↗</a>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -104,9 +261,9 @@ export default function Results() {
   const { inviteCode } = useParams()
   const navigate = useNavigate()
 
-  const [match, setMatch] = useState(null)
+  const [match, setMatch]       = useState(null)
   const [myHandle, setMyHandle] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
     axiosInstance.get(API_PATHS.USER.ME)
@@ -123,37 +280,44 @@ export default function Results() {
       .finally(() => setLoading(false))
   }, [inviteCode])
 
-  if (loading) return <LoadingScreen />
-  if (!match) {
-    return (
-      <>
-        <style>{css}</style>
-        <div className="rs">
-          <Navbar />
-          <main className="rs-main">
-            <div className="rs-loading">Match not found.</div>
-          </main>
-        </div>
-      </>
-    )
-  }
+  if (loading) return (
+    <>
+      <style>{css}</style>
+      <div className="rs"><Navbar /><main className="rs-main"><div className="rs-loading"><div className="rs-spinner" />Loading results…</div></main></div>
+    </>
+  )
 
-  // ── Outcome ──────────────────────────────────────────────────────────────
+  if (!match) return (
+    <>
+      <style>{css}</style>
+      <div className="rs"><Navbar /><main className="rs-main"><div className="rs-loading">Match not found.</div></main></div>
+    </>
+  )
+
   const s1 = match.score1 ?? 0
   const s2 = match.score2 ?? 0
-  const isDraw = s1 === s2
-  const p1Wins = !isDraw && s1 > s2
-  const p2Wins = !isDraw && s2 > s1
-  const winner = isDraw ? null : p1Wins ? match.user1 : match.user2
 
-  const durationMs = match.endTime && match.startTime
+  // Java Map<Integer,String> comes as { "0": "SOLVED", "1": "—", ... }
+  // player1Results → always user1, player2Results → always user2
+  const r1 = match.player1Results ?? null
+  const r2 = match.player2Results ?? null
+
+  const isDraw  = s1 === s2
+  const p1Wins  = !isDraw && s1 > s2
+  const p2Wins  = !isDraw && s2 > s1
+  const winner  = isDraw ? null : p1Wins ? match.user1 : match.user2
+  const problems = match.problems || []
+
+  const durationMs  = match.endTime && match.startTime
     ? new Date(match.endTime).getTime() - new Date(match.startTime).getTime()
     : null
   const durationMin = durationMs ? Math.round(durationMs / 60000) : null
 
-  // Tags
-  const tag = (isWin, isDr) => isWin ? 'win' : isDr ? 'draw' : 'lose'
-  const scoreClass = (isWin, isDr) => isWin ? 'won' : isDr ? 'tied' : 'lost'
+  const isMe = (handle) =>
+    !!myHandle && !!handle && handle.toLowerCase() === myHandle.toLowerCase()
+
+  // Debug: log what the backend actually sent
+  console.log('[Results] r1:', r1, '| r2:', r2, '| s1:', s1, '| s2:', s2)
 
   return (
     <>
@@ -161,94 +325,70 @@ export default function Results() {
       <div className="rs">
         <Navbar />
         <main className="rs-main">
+          <div className="rs-inner">
 
-          {/* Hero */}
-          <div className="rs-eyebrow">Match complete · {inviteCode}</div>
-          <h1 className="rs-title">
-            {isDraw
-              ? <span className="rs-draw-txt">Draw.</span>
-              : <><span className="rs-winner-name">{winner}</span> wins.</>
-            }
-          </h1>
-          <p className="rs-subtitle">// final results</p>
-
-          <div className="rs-card">
-
-            {/* Score section */}
-            <div className="rs-score-row">
-              {/* Player 1 */}
-              <div className={`rs-player ${p1Wins ? 'winner-bg' : 'loser-bg'}`}>
-                <div className={`rs-result-tag ${tag(p1Wins, isDraw)}`}>
-                  {isDraw ? 'draw' : p1Wins ? 'winner' : 'defeated'}
-                </div>
-                <div className="rs-player-handle">{match.user1}</div>
-                {match.user1 === myHandle && <div className="rs-you-note">YOU</div>}
-                <div className={`rs-player-score ${scoreClass(p1Wins, isDraw)}`}>{s1}</div>
-                <div className="rs-score-lbl">solved</div>
+            <div className="rs-verdict">
+              <div className="rs-eyebrow">match complete</div>
+              <div className="rs-verdict-main">
+                {isDraw
+                  ? <span className="draw">Draw.</span>
+                  : <><span className="winner">{winner}</span>{' '}wins.</>
+                }
               </div>
-
-              <div className="rs-divider-v" />
-
-              {/* Player 2 */}
-              <div className={`rs-player ${p2Wins ? 'winner-bg' : 'loser-bg'}`}>
-                <div className={`rs-result-tag ${tag(p2Wins, isDraw)}`}>
-                  {isDraw ? 'draw' : p2Wins ? 'winner' : 'defeated'}
-                </div>
-                <div className="rs-player-handle">{match.user2 || '—'}</div>
-                {match.user2 === myHandle && <div className="rs-you-note">YOU</div>}
-                <div className={`rs-player-score ${scoreClass(p2Wins, isDraw)}`}>{s2}</div>
-                <div className="rs-score-lbl">solved</div>
-              </div>
+              <div className="rs-verdict-sub">// {inviteCode} · final results</div>
             </div>
 
-            {/* Meta grid */}
+            <div className="rs-battle">
+              {/* user1 always left, player1Results always belongs to user1 */}
+              <PlayerCard
+                handle={match.user1}
+                isYou={isMe(match.user1)}
+                score={s1}
+                results={r1}
+                problems={problems}
+                isWin={p1Wins}
+                isDraw={isDraw}
+              />
+
+              <div className="rs-vs-col">
+                <div className="rs-vs-line" />
+                <div className="rs-vs-badge">VS</div>
+              </div>
+
+              {/* user2 always right, player2Results always belongs to user2 */}
+              <PlayerCard
+                handle={match.user2}
+                isYou={isMe(match.user2)}
+                score={s2}
+                results={r2}
+                problems={problems}
+                isWin={p2Wins}
+                isDraw={isDraw}
+              />
+            </div>
+
             <div className="rs-meta">
               <div className="rs-meta-item">
                 <div className="rs-meta-key">Duration</div>
-                <div className="rs-meta-val">{durationMin != null ? `${durationMin} min` : '—'}</div>
+                <div className="rs-meta-val">{durationMin != null ? `${durationMin}m` : '—'}</div>
               </div>
               <div className="rs-meta-item">
                 <div className="rs-meta-key">Problems</div>
-                <div className="rs-meta-val">{match.problems?.length ?? '—'}</div>
+                <div className="rs-meta-val">{problems.length || '—'}</div>
               </div>
               <div className="rs-meta-item">
                 <div className="rs-meta-key">Started</div>
                 <div className="rs-meta-val">
                   {match.startTime
-                    ? new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    ? new Date(match.startTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
                     : '—'}
                 </div>
               </div>
-              <div className="rs-meta-item">
-                <div className="rs-meta-key">Invite Code</div>
-                <div className="rs-meta-val" style={{ letterSpacing: '0.15em' }}>{inviteCode}</div>
-              </div>
             </div>
 
-            {/* Problems list */}
-            {match.problems?.length > 0 && (
-              <div className="rs-problems">
-                <div className="rs-prob-title">All Problems</div>
-                {match.problems.map((pid, i) => (
-                  <div className="rs-prob-row" key={pid + i}>
-                    <span className="rs-prob-num">{i + 1}</span>
-                    <span className="rs-prob-name">Problem {i + 1}</span>
-                    <a className="rs-prob-cf" href={cfUrl(pid)} target="_blank" rel="noreferrer">
-                      CF →
-                    </a>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Actions */}
             <div className="rs-actions">
-              <button className="rs-btn-ghost" onClick={() => navigate('/dashboard')}>
-                Dashboard
-              </button>
-              <button className="rs-btn-cta" onClick={() => navigate('/match/create')}>
-                ⚔ New Match
-              </button>
+              <button className="rs-btn-ghost" onClick={() => navigate('/dashboard')}>Dashboard</button>
+              <button className="rs-btn-cta"   onClick={() => navigate('/match/create')}>⚔ New Match</button>
             </div>
 
           </div>

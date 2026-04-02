@@ -337,8 +337,10 @@ const css = `
   .mr-stat-bar-bg { height: 5px; background: var(--border2); border-radius: 99px; overflow: hidden; }
   .mr-stat-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
   .mr-stat-bar-fill.me  { background: var(--accent); box-shadow: 0 0 8px rgba(200,255,0,0.4); }
-  .mr-stat-bar-fill.opp { background: var(--border2); background: linear-gradient(90deg, #333, #4a4a55); }
-
+.mr-stat-bar-fill.opp {
+  background: linear-gradient(90deg, #f87171, #dc2626);
+  box-shadow: 0 0 10px rgba(248,113,113,0.5);
+}
   /* ── PROBLEM TABLE ── */
   .mr-prob-table {
     background: var(--panel); border: 1px solid var(--border);
@@ -697,13 +699,18 @@ export default function MatchRoom() {
     : 'Waiting for player 2 to join…'
 
   function myProblemState(i) {
-    if (i < meScore)   return 'solved'   // I solved this (my score = count of my solved problems)
-    if (i === curIdx)  return 'current'  // currently active problem for me
+    const result = match?.player1Results?.[i]
+
+    if (result === 'SOLVED') return 'solved'
+    if (i === curIdx) return 'current'
     return 'locked'
   }
+
   function oppProblemState(i) {
-    if (i < oppScore)  return 'solved'   // opponent solved this independently
-    if (i === curIdx)  return 'working'  // opponent on current problem
+    const result = match?.player2Results?.[i]
+
+    if (result === 'SOLVED') return 'solved'
+    if (i === curIdx) return 'working'
     return 'locked'
   }
 
