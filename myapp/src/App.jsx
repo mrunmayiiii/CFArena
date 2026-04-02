@@ -4,10 +4,10 @@ import Login from './pages/auth/login'
 import Signup from './pages/auth/signup'
 import OAuthCallback from './pages/auth/OAuthCallback'
 import Dashboard from './pages/Dashboard'
-// import MatchCreate from './pages/match/MatchCreate'
-// import MatchJoin from './pages/match/MatchJoin'
-// import MatchRoom from './pages/match/MatchRoom'
-// import Results from './pages/match/Results'
+import Matchcreate from './pages/match/MatchCreate'
+import MatchJoin from './pages/match/MatchJoin'
+import MatchRoom from './pages/match/MatchRoom'
+import Results from './pages/match/Results'
 
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
@@ -90,11 +90,11 @@ function App() {
           }
         />
 
-        {/* <Route
+        <Route
           path="/match/create"
           element={
             <ProtectedRoute>
-              <MatchCreate />
+              <Matchcreate />
             </ProtectedRoute>
           }
         />
@@ -118,13 +118,13 @@ function App() {
         />
 
         <Route
-          path="/results/:matchId"
+          path="/results/:inviteCode"
           element={
             <ProtectedRoute>
               <Results />
             </ProtectedRoute>
           }
-        /> */}
+        /> 
 
         {/* 🔁 Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
