@@ -21,8 +21,7 @@ export default function Login() {
   }
 
   const handleGoogleLogin = () => {
-    window.location.href = `${BASE_URL}/${API_PATHS.AUTH.OAUTH}`  // ✅ uses localhost:8080
-}
+    window.location.href = `${BASE_URL.replace(/\/$/, "")}/${API_PATHS.AUTH.OAUTH}`}
 
   const onSubmit = async (event) => {
     event.preventDefault()
