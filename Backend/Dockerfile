@@ -2,14 +2,10 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-# Copy backend only
-COPY Backend /app
+# Copy current folder (Backend)
+COPY . .
 
-# Move into correct directory
-WORKDIR /app
-
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+RUN chmod +x mvnw && ./mvnw clean package -DskipTests
 
 EXPOSE 8080
 
