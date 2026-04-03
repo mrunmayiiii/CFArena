@@ -44,9 +44,12 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 
     String token = jwtService.generateToken(email);
     System.out.println("JWT Token: " + token);
+    String frontendUrl = System.getenv("FRONTEND_URL");
 
-    String redirectUrl = "http://localhost:5173/auth/callback?token=" + token;
+    String redirectUrl = frontendUrl + "/auth/callback?token=" + token;
     
+    //String frontendUrl = System.getenv("FRONTEND_URL");
+    //res.sendRedirect(frontendUrl + "/auth/callback?token=" + token);    
     // ✅ Use this instead of response.sendRedirect
     getRedirectStrategy().sendRedirect(request, response, redirectUrl);
 }
