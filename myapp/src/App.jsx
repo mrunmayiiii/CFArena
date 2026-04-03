@@ -4,7 +4,7 @@ import Login from './pages/auth/login'
 import Signup from './pages/auth/signup'
 import OAuthCallback from './pages/auth/OAuthCallback'
 import Dashboard from './pages/Dashboard'
-import Matchcreate from './pages/match/MatchCreate'
+import MatchCreate from './pages/match/Matchcreate'
 import MatchJoin from './pages/match/MatchJoin'
 import MatchRoom from './pages/match/MatchRoom'
 import Results from './pages/match/Results'
@@ -94,7 +94,7 @@ function App() {
           path="/match/create"
           element={
             <ProtectedRoute>
-              <Matchcreate />
+              <MatchCreate />
             </ProtectedRoute>
           }
         />

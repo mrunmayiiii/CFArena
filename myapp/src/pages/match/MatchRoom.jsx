@@ -3,432 +3,320 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATHS } from '../../utils/apiPaths'
 import Navbar from '../../components/Navbar'
+import { celebrateSolve } from './fireworks'
 
 const WS_BASE = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
 
+function toResultsArray(val) {
+  if (!val) return []
+  if (Array.isArray(val)) return val
+  const keys = Object.keys(val)
+  if (keys.length === 0) return []
+  const len = Math.max(...keys.map(Number)) + 1
+  return Array.from({ length: len }, (_, i) => val[i] ?? '-')
+}
+
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:        #09090b;
-    --surface:   #0f0f12;
-    --panel:     #111114;
-    --panel2:    #141418;
-    --border:    #1e1e24;
-    --border2:   #2a2a33;
-    --accent:    #c8ff00;
-    --accent-10: rgba(200,255,0,0.07);
-    --accent-20: rgba(200,255,0,0.18);
-    --accent-dim: rgba(200,255,0,0.55);
-    --text:      #eeeef2;
-    --muted:     #46464f;
-    --muted2:    #7a7a88;
-    --danger:    #f87171;
-    --warn:      #fb923c;
-    --warn-bg:   rgba(251,146,60,0.06);
-    --warn-border: rgba(251,146,60,0.22);
-    --mono:      'IBM Plex Mono', monospace;
-    --display:   'IBM Plex Mono', monospace;
-    --radius:    4px;
+    --bg:          #06060a;
+    --surface:     #0c0c10;
+    --panel:       #101014;
+    --panel2:      #141419;
+    --panel3:      #191920;
+    --border:      #22222c;
+    --border2:     #2e2e3a;
+    --border3:     #3a3a48;
+    --accent:      #c8ff00;
+    --accent-5:    rgba(200,255,0,0.04);
+    --accent-10:   rgba(200,255,0,0.09);
+    --accent-20:   rgba(200,255,0,0.2);
+    --accent-40:   rgba(200,255,0,0.4);
+    --accent-dim:  rgba(200,255,0,0.6);
+    --text:        #f0f0f6;
+    --text2:       #c0c0cc;
+    --muted:       #50505e;
+    --muted2:      #808090;
+    --danger:      #ff6b6b;
+    --danger-bg:   rgba(255,107,107,0.08);
+    --warn:        #ffaa44;
+    --warn-bg:     rgba(255,170,68,0.07);
+    --warn-border: rgba(255,170,68,0.24);
+    --success:     #44ffaa;
+    --mono:        'IBM Plex Mono', monospace;
+    --radius:      6px;
+    --radius-lg:   10px;
+    --glow-sm:     0 0 12px rgba(200,255,0,0.18);
+    --glow-md:     0 0 24px rgba(200,255,0,0.25);
+    --glow-lg:     0 0 48px rgba(200,255,0,0.18), 0 0 96px rgba(200,255,0,0.08);
   }
 
   .mr { min-height:100vh; background:var(--bg); color:var(--text); font-family:var(--mono); display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
   .mr-main { flex:1; padding:36px 40px 80px; max-width:1200px; margin:0 auto; width:100%; }
+  .mr::before { content:''; position:fixed; inset:0; z-index:0; pointer-events:none; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(200,255,0,0.008) 3px,rgba(200,255,0,0.008) 4px); }
+  .mr-main { position:relative; z-index:1; }
 
-  /* ── LOADING ── */
-  .mr-loading {
-    position: fixed; inset: 0; z-index: 200;
-    background: var(--bg);
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 0;
-  }
+  /* ── Loading screen ── */
+  .mr-loading { position:fixed; inset:0; z-index:200; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .mr-loading::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 60% 50% at 50% 50%, rgba(200,255,0,0.04) 0%, transparent 70%); }
+  .mr-loading-inner { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; width:100%; max-width:460px; padding:0 24px; }
+  .mr-loading-eyebrow { font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--muted2); margin-bottom:32px; display:flex; align-items:center; gap:12px; }
+  .mr-loading-eyebrow::before,.mr-loading-eyebrow::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--border2)); width:50px; }
+  .mr-loading-title { font-size:clamp(48px,9vw,72px); font-weight:700; letter-spacing:-0.03em; line-height:0.95; color:var(--text); text-align:center; margin-bottom:8px; }
+  .mr-loading-title span { color:var(--accent); display:inline-block; animation:mrFlicker 3.5s ease-in-out infinite; text-shadow:var(--glow-md); }
+  @keyframes mrFlicker { 0%,100%{opacity:1} 46%{opacity:1} 50%{opacity:0.3} 54%{opacity:1} 91%{opacity:1} 93%{opacity:0.5} 95%{opacity:1} }
+  .mr-loading-sub { font-size:11px; color:var(--muted2); letter-spacing:0.12em; text-align:center; margin-bottom:52px; }
+  .mr-loading-bar-wrap { width:100%; height:1px; background:var(--border2); margin-bottom:24px; position:relative; overflow:hidden; }
+  .mr-loading-bar { position:absolute; top:0; left:-60%; width:60%; height:100%; background:linear-gradient(90deg,transparent,var(--accent),var(--accent-dim),transparent); animation:mrSlide 1.5s ease-in-out infinite; }
+  @keyframes mrSlide { 0%{left:-60%} 100%{left:110%} }
+  .mr-loading-steps { width:100%; display:flex; flex-direction:column; gap:12px; }
+  .mr-loading-step { display:flex; align-items:center; gap:14px; font-size:11px; letter-spacing:0.1em; color:var(--muted); transition:color 0.3s; }
+  .mr-loading-step.active { color:var(--text); }
+  .mr-loading-step.done   { color:var(--muted2); }
+  .mr-ls-icon { width:22px; height:22px; border-radius:50%; border:1px solid var(--border2); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:9px; transition:all 0.3s; }
+  .mr-loading-step.active .mr-ls-icon { border-color:var(--accent); box-shadow:var(--glow-sm); }
+  .mr-loading-step.active .mr-ls-icon::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--accent); animation:mrPulse 0.9s infinite; display:block; }
+  .mr-loading-step.done .mr-ls-icon { border-color:var(--muted); color:var(--muted2); }
+  .mr-loading-step.done .mr-ls-icon::before { content:'✓'; font-size:10px; }
 
-  /* Scanline texture overlay */
-  .mr-loading::before {
-    content: '';
-    position: absolute; inset: 0; z-index: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(200,255,0,0.012) 2px,
-      rgba(200,255,0,0.012) 4px
-    );
-    pointer-events: none;
-  }
+  /* ── Top bar ── */
+  .mr-topbar { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; gap:16px; }
+  .mr-tag { font-size:9px; color:var(--muted2); letter-spacing:0.28em; text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .mr-tag::before { content:''; width:16px; height:1px; background:var(--accent); opacity:0.5; }
+  .mr-title { font-size:26px; font-weight:700; letter-spacing:-0.02em; }
+  .mr-title em { color:var(--accent); font-style:normal; text-shadow:var(--glow-sm); }
 
-  .mr-loading-inner {
-    position: relative; z-index: 1;
-    display: flex; flex-direction: column;
-    align-items: center; gap: 0;
-    width: 100%; max-width: 480px;
-    padding: 0 24px;
-  }
+  /* ── Timer ── */
+  .mr-timer-block { text-align:right; }
+  .mr-timer { font-size:56px; font-weight:300; color:var(--accent); letter-spacing:-0.02em; line-height:1; text-shadow:var(--glow-md); font-variant-numeric:tabular-nums; transition:color 0.5s,text-shadow 0.5s; }
+  .mr-timer.urgent { color:var(--danger); text-shadow:0 0 24px rgba(255,107,107,0.4); animation:mrTimerUrgent 1s ease-in-out infinite; }
+  @keyframes mrTimerUrgent { 0%,100%{opacity:1} 50%{opacity:0.45} }
+  .mr-timer-lbl { font-size:9px; color:var(--muted2); letter-spacing:0.22em; text-transform:uppercase; margin-top:6px; }
 
-  /* Top label */
-  .mr-loading-eyebrow {
-    font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase;
-    color: var(--muted2); margin-bottom: 28px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .mr-loading-eyebrow::before,
-  .mr-loading-eyebrow::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
-    width: 40px;
-  }
+  /* ── Status bar ── */
+  .mr-status { display:flex; align-items:center; gap:12px; padding:12px 18px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:24px; position:relative; overflow:hidden; }
+  .mr-status::before { content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--accent); opacity:0; transition:opacity 0.3s; }
+  .mr-status.live::before { opacity:1; box-shadow:var(--glow-sm); }
+  .mr-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .mr-dot.live    { background:var(--accent); box-shadow:0 0 8px rgba(200,255,0,0.6); animation:mrPulse 2s infinite; }
+  .mr-dot.waiting { background:var(--warn); animation:mrPulse 2.5s infinite; }
+  .mr-dot.done    { background:var(--muted); }
+  @keyframes mrPulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .mr-status-txt { font-size:12px; color:var(--muted2); letter-spacing:0.06em; }
 
-  /* Big animated title */
-  .mr-loading-title {
-    font-family: var(--display); font-size: clamp(42px, 8vw, 64px);
-    font-weight: 800; letter-spacing: -0.02em; line-height: 1;
-    color: var(--text); text-align: center; margin-bottom: 6px;
-  }
-  .mr-loading-title span {
-    color: var(--accent);
-    animation: mrFlicker 3s ease-in-out infinite;
-  }
-  @keyframes mrFlicker {
-    0%,100% { opacity: 1; }
-    48% { opacity: 1; }
-    50% { opacity: 0.4; }
-    52% { opacity: 1; }
-    92% { opacity: 1; }
-    93% { opacity: 0.6; }
-    94% { opacity: 1; }
-  }
+  .mr-err { background:var(--danger-bg); border:1px solid rgba(255,107,107,0.2); border-left:2px solid var(--danger); padding:14px 18px; border-radius:var(--radius); margin-bottom:18px; font-size:12px; color:#ffaaaa; }
 
-  .mr-loading-sub {
-    font-size: 12px; color: var(--muted2); letter-spacing: 0.1em;
-    text-align: center; margin-bottom: 48px;
-  }
+  /* ── Lobby ── */
+  .mr-lobby { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; margin-bottom:20px; }
+  .mr-lobby-head { padding:32px 32px 26px; border-bottom:1px solid var(--border); position:relative; overflow:hidden; }
+  .mr-lobby-head::after { content:''; position:absolute; top:-40px; right:-40px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle, var(--accent-5) 0%, transparent 70%); pointer-events:none; }
+  .mr-lobby-title { font-size:30px; font-weight:700; letter-spacing:-0.02em; margin-bottom:6px; }
+  .mr-lobby-sub { font-size:11px; color:var(--muted2); letter-spacing:0.1em; }
+  .mr-players { display:grid; grid-template-columns:1fr 1fr; }
+  .mr-player { padding:26px 32px; border-right:1px solid var(--border); position:relative; }
+  .mr-player:last-child { border-right:none; }
+  .mr-player-lbl { font-size:9px; color:var(--muted); letter-spacing:0.24em; text-transform:uppercase; margin-bottom:14px; }
+  .mr-player-name { font-size:20px; font-weight:600; margin-bottom:12px; letter-spacing:-0.01em; }
+  .mr-player-name.empty { color:var(--border3); }
+  .mr-badges { display:flex; gap:6px; flex-wrap:wrap; }
+  .mr-badge { font-size:9px; letter-spacing:0.16em; text-transform:uppercase; padding:4px 10px; border-radius:2px; border:1px solid; }
+  .mr-badge.host   { color:var(--accent); border-color:var(--accent-20); background:var(--accent-10); }
+  .mr-badge.you    { color:var(--muted2); border-color:var(--border2); }
+  .mr-badge.ready  { color:var(--accent); border-color:var(--accent-20); background:var(--accent-10); }
+  .mr-badge.joined { color:var(--warn); border-color:var(--warn-border); background:var(--warn-bg); }
+  .mr-code-row { display:flex; align-items:stretch; border-top:1px solid var(--border); }
+  .mr-code-lbl-block { padding:16px 26px; border-right:1px solid var(--border); display:flex; align-items:center; background:var(--surface); }
+  .mr-code-lbl { font-size:9px; color:var(--muted); letter-spacing:0.24em; text-transform:uppercase; }
+  .mr-code-val { flex:1; padding:16px 26px; font-size:24px; font-weight:700; letter-spacing:0.22em; color:var(--accent); display:flex; align-items:center; text-shadow:var(--glow-sm); }
+  .mr-copy-btn { padding:0 24px; background:none; border:none; border-left:1px solid var(--border); cursor:pointer; font-family:var(--mono); font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted2); transition:color .15s,background .15s; white-space:nowrap; }
+  .mr-copy-btn:hover { color:var(--text); background:var(--panel2); }
+  .mr-copy-btn.copied { color:var(--accent); }
+  .mr-lobby-foot { padding:22px 32px; border-top:1px solid var(--border); display:flex; align-items:center; gap:16px; background:var(--surface); }
+  .mr-hint { font-size:12px; color:var(--muted2); letter-spacing:0.04em; flex:1; line-height:1.9; }
+  .mr-hint em { color:var(--accent-dim); font-style:normal; }
 
-  /* Progress bar */
-  .mr-loading-bar-wrap {
-    width: 100%; height: 2px;
-    background: var(--border); border-radius: 2px;
-    overflow: hidden; margin-bottom: 20px;
-    position: relative;
-  }
-  .mr-loading-bar {
-    position: absolute; top: 0; left: -60%;
-    width: 60%; height: 100%;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    animation: mrSlide 1.6s ease-in-out infinite;
-    border-radius: 2px;
-  }
-  @keyframes mrSlide {
-    0%   { left: -60%; }
-    100% { left: 110%; }
-  }
+  .mr-btn-primary { font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#06060a; background:var(--accent); border:none; padding:14px 28px; border-radius:var(--radius); cursor:pointer; transition:opacity .15s,transform .1s,box-shadow .15s; white-space:nowrap; flex-shrink:0; box-shadow:0 0 20px rgba(200,255,0,0.2); }
+  .mr-btn-primary:hover { opacity:0.9; transform:translateY(-2px); box-shadow:var(--glow-md); }
+  .mr-btn-primary:active { transform:translateY(0); box-shadow:none; }
+  .mr-btn-primary:disabled { opacity:0.18; cursor:not-allowed; transform:none; box-shadow:none; }
 
-  /* Steps list */
-  .mr-loading-steps {
-    width: 100%; display: flex; flex-direction: column; gap: 10px;
-  }
-  .mr-loading-step {
-    display: flex; align-items: center; gap: 12px;
-    font-size: 12px; letter-spacing: 0.08em; color: var(--muted);
-  }
-  .mr-loading-step.active { color: var(--text); }
-  .mr-loading-step.done   { color: var(--muted2); }
-  .mr-ls-icon {
-    width: 20px; height: 20px; border-radius: 50%;
-    border: 1px solid var(--border2);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; font-size: 9px; color: var(--muted);
-  }
-  .mr-loading-step.active .mr-ls-icon {
-    border-color: var(--accent);
-    color: var(--accent);
-    box-shadow: 0 0 8px rgba(200,255,0,0.25);
-  }
-  .mr-loading-step.active .mr-ls-icon::before { content: ''; width:6px; height:6px; border-radius:50%; background:var(--accent); animation: mrPulse 1s infinite; display:block; }
-  .mr-loading-step.done .mr-ls-icon { border-color: var(--muted); color: var(--muted2); }
-  .mr-loading-step.done .mr-ls-icon::before { content: '✓'; font-size: 10px; }
+  /* ── Score section ── */
+  .mr-score-section { display:grid; grid-template-columns:1fr auto 1fr; gap:0; margin-bottom:16px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .mr-score-me  { padding:32px 36px; position:relative; overflow:hidden; border-right:1px solid var(--border); }
+  .mr-score-opp { padding:32px 36px; text-align:right; border-left:1px solid var(--border); }
+  .mr-score-me::after  { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--accent),transparent); }
+  .mr-score-me::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 0% 0%,rgba(200,255,0,0.04) 0%,transparent 60%); pointer-events:none; }
+  .mr-score-handle { font-size:10px; color:var(--muted2); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .mr-score-opp .mr-score-handle { justify-content:flex-end; }
+  .mr-score-handle-pip { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; box-shadow:0 0 6px rgba(200,255,0,0.5); }
+  .mr-score-ring-wrap { display:flex; align-items:center; gap:20px; }
+  .mr-score-opp .mr-score-ring-wrap { flex-direction:row-reverse; }
+  .mr-ring-svg { flex-shrink:0; }
+  .mr-ring-track { fill:none; stroke:var(--border2); stroke-width:3; }
+  .mr-ring-fill  { fill:none; stroke-width:3; stroke-linecap:round; transition:stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1); }
+  .mr-ring-fill.me  { stroke:var(--accent); filter:drop-shadow(0 0 6px rgba(200,255,0,0.5)); }
+  .mr-ring-fill.opp { stroke:var(--danger);  filter:drop-shadow(0 0 6px rgba(255,107,107,0.4)); }
+  .mr-ring-num { fill:var(--text); font-family:var(--mono); font-size:26px; font-weight:300; text-anchor:middle; dominant-baseline:central; }
+  .mr-ring-num.me { fill:var(--accent); }
+  @keyframes scorePop { 0%{transform:scale(1)} 35%{transform:scale(1.18)} 65%{transform:scale(0.94)} 100%{transform:scale(1)} }
+  .score-pop .mr-ring-num  { animation:scorePop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .score-pop .mr-ring-fill { filter:drop-shadow(0 0 12px rgba(200,255,0,0.8)); }
+  .mr-score-vs { display:flex; align-items:center; justify-content:center; padding:0 20px; }
+  .mr-vs-inner { font-size:11px; font-weight:600; letter-spacing:0.2em; color:var(--muted); }
 
-  @keyframes mrSpin { to { transform: rotate(360deg); } }
-  @keyframes mrDot { 0%,80%,100%{transform:scale(0.5);opacity:0.25} 40%{transform:scale(1);opacity:1} }
+  /* ── Progress ── */
+  .mr-progress-section { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .mr-prog-card { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; }
+  .mr-prog-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .mr-prog-label { font-size:10px; color:var(--muted2); letter-spacing:0.16em; text-transform:uppercase; }
+  .mr-prog-pct { font-size:13px; font-weight:600; }
+  .mr-prog-pct.me  { color:var(--accent); text-shadow:var(--glow-sm); }
+  .mr-prog-pct.opp { color:var(--danger); }
+  .mr-prog-track { height:6px; background:var(--border2); border-radius:99px; overflow:hidden; position:relative; }
+  .mr-prog-fill { height:100%; border-radius:99px; transition:width 1s cubic-bezier(0.4,0,0.2,1); position:relative; }
+  .mr-prog-fill.me  { background:var(--accent); box-shadow:0 0 10px rgba(200,255,0,0.5); }
+  .mr-prog-fill.opp { background:linear-gradient(90deg,#ff6b6b,#ff3333); box-shadow:0 0 10px rgba(255,107,107,0.4); }
+  .mr-prog-fill::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.22) 50%,transparent 100%); background-size:200% 100%; animation:progShimmer 2.4s ease-in-out infinite; }
+  @keyframes progShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-  /* ── TOP BAR ── */
-  .mr-topbar {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    margin-bottom: 24px; gap: 16px;
-  }
-  .mr-tag {
-    font-size: 10px; color: var(--muted2); letter-spacing: 0.2em;
-    text-transform: uppercase; margin-bottom: 6px;
-  }
-  .mr-title {
-    font-family: var(--display); font-size: 24px; font-weight: 800;
-    letter-spacing: -0.01em;
-  }
-  .mr-title em { color: var(--accent); font-style: normal; }
+  /* ── Problem table ── */
+  .mr-prob-table { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .mr-prob-table-head { display:grid; grid-template-columns:60px 1fr 170px 170px; padding:12px 28px; border-bottom:1px solid var(--border); background:var(--surface); }
+  .mr-th { font-size:9px; color:var(--muted); letter-spacing:0.24em; text-transform:uppercase; }
+  .mr-th.center { text-align:center; }
+  .mr-prob-row { display:grid; grid-template-columns:60px 1fr 170px 170px; align-items:center; padding:20px 28px; border-bottom:1px solid var(--border); border-left:2px solid transparent; transition:border-color .3s,background .3s; position:relative; overflow:hidden; }
+  .mr-prob-row:last-child { border-bottom:none; }
+  .mr-prob-row.current-row { border-left-color:var(--accent); background:var(--accent-5); }
+  .mr-prob-row.solved-row  { opacity:0.5; }
 
-  .mr-timer {
-    font-family: var(--mono); font-size: 52px; font-weight: 400;
-    color: var(--accent); letter-spacing: 0; line-height: 1;
-    text-align: right;
+  /* ── Inline solve flash (no modal) ── */
+  @keyframes solveFlash {
+    0%   { background:rgba(200,255,0,0);    border-left-color:transparent; }
+    8%   { background:rgba(200,255,0,0.22); border-left-color:var(--accent); box-shadow:inset 0 0 40px rgba(200,255,0,0.08); }
+    30%  { background:rgba(200,255,0,0.12); border-left-color:var(--accent); }
+    100% { background:rgba(200,255,0,0);    border-left-color:transparent; }
   }
-  .mr-timer.urgent { color: var(--danger); }
-  .mr-timer-lbl { font-size: 10px; color: var(--muted2); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 4px; text-align: right; }
+  .mr-prob-row.just-solved { animation:solveFlash 2s ease-out forwards; }
 
-  /* ── STATUS ── */
-  .mr-status {
-    display: flex; align-items: center; gap: 10px;
-    padding: 11px 16px;
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--radius); margin-bottom: 22px;
+  /* Inline solve scan line */
+  .mr-prob-row.just-solved::after {
+    content:'';
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:linear-gradient(90deg, transparent 0%, rgba(200,255,0,0.18) 50%, transparent 100%);
+    background-size:200% 100%;
+    background-position:200% 0;
+    animation:solveScanLine 0.7s ease-out 0.05s forwards;
   }
-  .mr-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .mr-dot.live    { background: var(--accent); box-shadow: 0 0 8px var(--accent-dim); animation: mrPulse 2s infinite; }
-  .mr-dot.waiting { background: var(--warn); animation: mrPulse 2.5s infinite; }
-  .mr-dot.done    { background: var(--muted); }
-  @keyframes mrPulse { 0%,100%{opacity:1}50%{opacity:0.25} }
-  .mr-status-txt { font-size: 12px; color: var(--muted2); letter-spacing: 0.05em; }
-
-  /* ── ERROR ── */
-  .mr-err {
-    background: #130d0d; border: 1px solid rgba(248,113,113,0.2);
-    border-left: 2px solid var(--danger);
-    padding: 13px 18px; border-radius: var(--radius);
-    margin-bottom: 18px; font-size: 13px; color: #fca5a5;
-  }
-
-  /* ── LOBBY ── */
-  .mr-lobby {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--radius); overflow: hidden; margin-bottom: 20px;
-  }
-  .mr-lobby-head {
-    padding: 28px 28px 22px; border-bottom: 1px solid var(--border);
-  }
-  .mr-lobby-title {
-    font-family: var(--display); font-size: 28px; font-weight: 800;
-    letter-spacing: -0.01em; margin-bottom: 5px;
-  }
-  .mr-lobby-sub { font-size: 12px; color: var(--muted2); letter-spacing: 0.06em; }
-
-  .mr-players { display: grid; grid-template-columns: 1fr 1fr; }
-  .mr-player { padding: 24px 28px; border-right: 1px solid var(--border); }
-  .mr-player:last-child { border-right: none; }
-  .mr-player-lbl {
-    font-size: 10px; color: var(--muted); letter-spacing: 0.2em;
-    text-transform: uppercase; margin-bottom: 12px;
-  }
-  .mr-player-name {
-    font-family: var(--display); font-size: 19px; font-weight: 700;
-    margin-bottom: 10px; letter-spacing: -0.01em;
-  }
-  .mr-player-name.empty { color: var(--border2); }
-  .mr-badges { display: flex; gap: 6px; flex-wrap: wrap; }
-  .mr-badge {
-    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
-    padding: 3px 9px; border-radius: 2px; border: 1px solid;
-  }
-  .mr-badge.host  { color: var(--accent); border-color: var(--accent-20); background: var(--accent-10); }
-  .mr-badge.you   { color: var(--muted2); border-color: var(--border2); }
-  .mr-badge.ready { color: var(--accent); border-color: var(--accent-20); background: var(--accent-10); }
-  .mr-badge.joined { color: var(--warn); border-color: var(--warn-border); background: var(--warn-bg); }
-
-  /* Invite code row */
-  .mr-code-row { display: flex; align-items: stretch; border-top: 1px solid var(--border); }
-  .mr-code-lbl-block {
-    padding: 16px 24px; border-right: 1px solid var(--border);
-    display: flex; align-items: center; background: var(--surface);
-  }
-  .mr-code-lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
-  .mr-code-val {
-    flex: 1; padding: 16px 24px;
-    font-family: var(--display); font-size: 22px; font-weight: 800;
-    letter-spacing: 0.2em; color: var(--accent); display: flex; align-items: center;
-  }
-  .mr-copy-btn {
-    padding: 0 22px; background: none; border: none;
-    border-left: 1px solid var(--border); cursor: pointer;
-    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--muted2);
-    transition: color .15s, background .15s; white-space: nowrap;
-  }
-  .mr-copy-btn:hover { color: var(--text); background: var(--panel2); }
-  .mr-copy-btn.copied { color: var(--accent); }
-
-  /* Lobby footer */
-  .mr-lobby-foot {
-    padding: 20px 28px; border-top: 1px solid var(--border);
-    display: flex; align-items: center; gap: 14px;
-    background: var(--surface);
-  }
-  .mr-hint { font-size: 12px; color: var(--muted2); letter-spacing: 0.04em; flex: 1; line-height: 1.8; }
-  .mr-hint em { color: var(--accent-dim); font-style: normal; }
-
-  .mr-btn-primary {
-    font-family: var(--mono); font-size: 11px; font-weight: 600;
-    letter-spacing: 0.12em; text-transform: uppercase;
-    color: #09090b; background: var(--accent);
-    border: none; padding: 13px 26px; border-radius: var(--radius);
-    cursor: pointer; transition: opacity .15s, transform .1s; white-space: nowrap; flex-shrink: 0;
-  }
-  .mr-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
-  .mr-btn-primary:active { transform: translateY(0); }
-  .mr-btn-primary:disabled { opacity: 0.2; cursor: not-allowed; transform: none; }
-
-  /* ── SCOREBOARD ── */
-  .mr-score {
-    display: grid; grid-template-columns: 1fr 80px 1fr;
-    border: 1px solid var(--border); border-radius: var(--radius);
-    overflow: hidden; margin-bottom: 12px;
-    background: var(--panel);
-  }
-  .mr-score-me {
-    padding: 28px 32px;
-    border-right: 1px solid var(--border);
-    position: relative; overflow: hidden;
-  }
-  .mr-score-me::after {
-    content: ''; position: absolute;
-    top: 0; left: 0; right: 0; height: 2px;
-    background: var(--accent);
-  }
-  .mr-score-opp { padding: 28px 32px; text-align: right; }
-  .mr-score-vs {
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px; color: var(--muted); letter-spacing: 0.2em;
-    border-left: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-  }
-  .mr-score-handle {
-    font-size: 10px; color: var(--muted2); letter-spacing: 0.14em;
-    text-transform: uppercase; margin-bottom: 10px;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .mr-score-opp .mr-score-handle { justify-content: flex-end; }
-  .mr-score-handle-dot {
-    width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex-shrink: 0;
-  }
-  .mr-score-num {
-    font-family: var(--mono); font-size: 72px; font-weight: 400;
-    line-height: 1; color: var(--text); letter-spacing: 0;
-  }
-  .mr-score-me .mr-score-num { color: var(--accent); }
-  .mr-score-lbl {
-    font-size: 10px; color: var(--muted); letter-spacing: 0.18em;
-    text-transform: uppercase; margin-top: 8px;
+  @keyframes solveScanLine {
+    0%   { background-position:200% 0; opacity:1; }
+    100% { background-position:-200% 0; opacity:0; }
   }
 
-  /* ── STATS ROW ── */
-  .mr-stats-row {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 10px; margin-bottom: 12px;
+  /* Number circle — solved state pop */
+  @keyframes solveCheckPop {
+    0%   { transform:scale(0.2) rotate(-40deg); opacity:0; }
+    55%  { transform:scale(1.4)  rotate(10deg);  opacity:1; }
+    75%  { transform:scale(0.88) rotate(-4deg); }
+    100% { transform:scale(1)    rotate(0deg);  opacity:1; }
   }
-  .mr-stat-card {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px 20px;
-  }
-  .mr-stat-top {
-    display: flex; justify-content: space-between;
-    align-items: center; margin-bottom: 10px;
-  }
-  .mr-stat-label { font-size: 10px; color: var(--muted2); letter-spacing: 0.16em; text-transform: uppercase; }
-  .mr-stat-pct   { font-size: 11px; color: var(--muted2); font-family: var(--mono); }
-  .mr-stat-pct.me { color: var(--accent); }
-  .mr-stat-bar-bg { height: 5px; background: var(--border2); border-radius: 99px; overflow: hidden; }
-  .mr-stat-bar-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
-  .mr-stat-bar-fill.me  { background: var(--accent); box-shadow: 0 0 8px rgba(200,255,0,0.4); }
-.mr-stat-bar-fill.opp {
-  background: linear-gradient(90deg, #f87171, #dc2626);
-  box-shadow: 0 0 10px rgba(248,113,113,0.5);
-}
-  /* ── PROBLEM TABLE ── */
-  .mr-prob-table {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--radius); overflow: hidden;
-  }
-  .mr-prob-table-head {
-    display: grid; grid-template-columns: 56px 1fr 160px 160px;
-    padding: 11px 24px; border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .mr-th { font-size: 10px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
-  .mr-th.center { text-align: center; }
+  .mr-prob-n.just-pop { animation:solveCheckPop 0.65s cubic-bezier(0.34,1.56,0.64,1) forwards !important; }
 
-  .mr-prob-row {
-    display: grid; grid-template-columns: 56px 1fr 160px 160px;
-    align-items: center; padding: 18px 24px;
-    border-bottom: 1px solid var(--border);
-    border-left: 2px solid transparent;
-    transition: border-color .2s, background .2s;
+  /* Solved row fade-dim after flash */
+  @keyframes solvedDim {
+    0%   { opacity:1; }
+    100% { opacity:0.5; }
   }
-  .mr-prob-row:last-child { border-bottom: none; }
-  .mr-prob-row.current-row {
-    border-left-color: var(--accent);
-    background: rgba(200,255,0,0.03);
+  .mr-prob-row.solved-row { animation:solvedDim 0.5s ease-out 1.8s both; }
+
+  /* ── Unlock animation ── */
+  @keyframes unlockSlideIn {
+    0%   { opacity:0; transform:translateX(-28px) scaleY(0.85); }
+    50%  { opacity:1; transform:translateX(4px)   scaleY(1.02); }
+    100% { opacity:1; transform:translateX(0)     scaleY(1); }
   }
-  .mr-prob-row.solved-row { opacity: 0.6; }
-
-  .mr-prob-n {
-    font-family: var(--mono); font-size: 13px; font-weight: 600;
-    color: var(--muted); width: 28px; height: 28px;
-    display: flex; align-items: center; justify-content: center;
-    border: 1px solid var(--border); border-radius: 50%;
+  .mr-prob-row.just-unlocked { animation:unlockSlideIn 0.65s cubic-bezier(0.22,1,0.36,1) forwards; }
+  .mr-prob-row.just-unlocked::before {
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:0;
+    background:linear-gradient(90deg, rgba(200,255,0,0.12) 0%, rgba(200,255,0,0.04) 60%, transparent 100%);
+    animation:unlockGlowFade 1.6s ease-out 0.1s forwards;
   }
-  .mr-prob-n.solved  { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-  .mr-prob-n.current { color: var(--text); border-color: var(--border2); }
-
-  .mr-prob-name { font-size: 13px; color: var(--muted2); }
-  .mr-prob-name.current { color: var(--text); font-weight: 500; }
-  .mr-prob-name a {
-    color: inherit; text-decoration: none;
-    display: inline-flex; align-items: center; gap: 6px;
-    transition: color .15s;
+  .mr-prob-row.just-unlocked::after {
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:1;
+    background:linear-gradient(90deg, transparent 0%, rgba(200,255,0,0.28) 50%, transparent 100%);
+    background-size:200% 100%; background-position:200% 0;
+    animation:unlockScan 0.8s ease-in-out 0.05s forwards;
   }
-  .mr-prob-name a:hover { color: var(--accent); }
-  .mr-prob-link-icon { font-size: 10px; opacity: 0.6; }
+  @keyframes unlockGlowFade { 0%{opacity:1} 100%{opacity:0} }
+  @keyframes unlockScan { 0%{background-position:200% 0;opacity:1} 100%{background-position:-200% 0;opacity:0} }
 
-  .mr-prob-cell { text-align: center; }
+  /* ── Problem number circle ── */
+  .mr-prob-n { font-size:13px; font-weight:600; color:var(--muted); width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:50%; transition:all 0.5s; }
+  .mr-prob-n.solved  { color:var(--bg); background:var(--accent); border-color:var(--accent); box-shadow:0 0 12px rgba(200,255,0,0.4); }
+  .mr-prob-n.current { color:var(--text2); border-color:var(--border3); }
 
-  /* State chips */
-  .mr-state {
-    display: inline-flex; align-items: center; gap: 5px;
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-    padding: 5px 12px; border-radius: 99px; font-weight: 500;
+  /* ── Problem name ── */
+  .mr-prob-name { font-size:13px; color:var(--muted2); }
+  .mr-prob-name.current { color:var(--text); font-weight:500; }
+  .mr-prob-name a { color:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:7px; transition:color .15s; }
+  .mr-prob-name a:hover { color:var(--accent); }
+  .mr-prob-link-icon { font-size:10px; opacity:0.5; }
+  .mr-prob-cell { text-align:center; }
+
+  /* ── State chips ── */
+  .mr-state { display:inline-flex; align-items:center; gap:6px; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; padding:5px 13px; border-radius:99px; font-weight:600; }
+  .mr-state.ac   { color:var(--bg); background:var(--accent); box-shadow:0 0 14px rgba(200,255,0,0.35); }
+  .mr-state.live { color:var(--warn); background:rgba(255,170,68,0.1); border:1px solid rgba(255,170,68,0.28); }
+  .mr-state.lock { color:var(--muted); background:transparent; }
+  .mr-state-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+  .mr-state.live .mr-state-dot { background:var(--warn); animation:mrPulse 1.4s infinite; }
+
+  /* AC chip pop-in when it first appears */
+  @keyframes acChipIn {
+    0%   { transform:scale(0.3) translateY(6px); opacity:0; box-shadow:0 0 0 rgba(200,255,0,0); }
+    60%  { transform:scale(1.15) translateY(-2px); box-shadow:0 0 24px rgba(200,255,0,0.6); }
+    100% { transform:scale(1) translateY(0); opacity:1; box-shadow:0 0 14px rgba(200,255,0,0.35); }
   }
-  .mr-state.ac   { color: var(--bg); background: var(--accent); }
-  .mr-state.live { color: var(--warn); background: rgba(251,146,60,0.12); border: 1px solid rgba(251,146,60,0.25); }
-  .mr-state.lock { color: var(--muted); background: transparent; }
-  .mr-state-dot  { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-  .mr-state.live .mr-state-dot { background: var(--warn); animation: mrPulse 1.5s infinite; }
+  .mr-state.ac.just-ac { animation:acChipIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
 
-  /* ── TOAST ── */
-  .mr-toast {
-    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
-    font-size: 12px; letter-spacing: 0.07em; padding: 10px 22px;
-    border-radius: var(--radius); border-left: 2px solid var(--accent);
-    background: var(--panel2); color: var(--accent-dim);
-    white-space: nowrap; z-index: 300;
-    animation: mrToastIn .2s ease;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-  }
-  .mr-toast.error { border-color: var(--danger); background: #130d0d; color: #fca5a5; }
-  @keyframes mrToastIn { from{opacity:0;transform:translateX(-50%) translateY(8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  /* ── Unlock banner ── */
+  .unlock-banner { position:fixed; bottom:72px; left:50%; transform:translateX(-50%); z-index:400; pointer-events:none; border-radius:var(--radius); animation:bannerIn 0.4s cubic-bezier(0.22,1,0.36,1); box-shadow:0 8px 32px rgba(0,0,0,0.7),0 0 32px rgba(200,255,0,0.1); }
+  .unlock-banner-inner { display:flex; align-items:center; gap:12px; padding:12px 22px 12px 14px; background:var(--panel3); border:1px solid var(--border2); border-left:3px solid var(--accent); border-radius:var(--radius); position:relative; overflow:hidden; white-space:nowrap; }
+  .unlock-banner-inner::after { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(90deg,transparent 0%,rgba(200,255,0,0.1) 50%,transparent 100%); background-size:200% 100%; background-position:200% 0; animation:unlockBannerScan 0.9s ease-out 0.15s forwards; }
+  @keyframes unlockBannerScan { 0%{background-position:200% 0;opacity:1} 100%{background-position:-200% 0;opacity:0} }
+  .unlock-banner-icon { width:28px; height:28px; border-radius:50%; background:var(--accent-10); border:1px solid var(--accent-20); display:flex; align-items:center; justify-content:center; flex-shrink:0; animation:unlockIconPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both; }
+  @keyframes unlockIconPop { from{transform:scale(0) rotate(-90deg);opacity:0} to{transform:scale(1) rotate(0deg);opacity:1} }
+  .unlock-banner-icon-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 8px rgba(200,255,0,0.8); animation:mrPulse 0.8s infinite; }
+  .unlock-banner-text { display:flex; flex-direction:column; gap:2px; }
+  .unlock-banner-label { font-size:9px; letter-spacing:0.28em; text-transform:uppercase; color:var(--muted2); }
+  .unlock-banner-name  { font-size:13px; font-weight:600; letter-spacing:0.04em; color:var(--accent); }
+  @keyframes bannerIn { from{opacity:0;transform:translateX(-50%) translateY(16px) scale(0.94)} to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)} }
 
-  /* ── DIVIDER ── */
-  .mr-divider { height: 1px; background: var(--border); margin: 0 -20px; }
+  /* ── Toast ── */
+  .mr-toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); font-size:12px; letter-spacing:0.08em; padding:11px 24px; border-radius:var(--radius); border-left:2px solid var(--accent); background:var(--panel3); color:var(--accent-dim); white-space:nowrap; z-index:300; animation:mrToastIn .22s ease; box-shadow:0 4px 24px rgba(0,0,0,0.6); }
+  .mr-toast.error { border-color:var(--danger); background:var(--danger-bg); color:#ffaaaa; }
+  @keyframes mrToastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 
-  @media (max-width: 640px) {
-    .mr-players { grid-template-columns: 1fr; }
-    .mr-player  { border-right: none; border-bottom: 1px solid var(--border); }
-    .mr-score   { grid-template-columns: 1fr; }
-    .mr-score-vs { display: none; }
-    .mr-score-opp { text-align: left; border-top: 1px solid var(--border); }
-    .mr-stats-row { grid-template-columns: 1fr; }
-    .mr-prob-table-head { grid-template-columns: 44px 1fr 90px 90px; }
-    .mr-prob-row        { grid-template-columns: 44px 1fr 90px 90px; }
-    .mr-timer { font-size: 38px; }
-    .mr-main { padding: 20px 16px 60px; }
-    .mr-lobby-foot { flex-direction: column; align-items: stretch; }
+  /* ── Responsive ── */
+  @media (max-width:640px) {
+    .mr-players { grid-template-columns:1fr; }
+    .mr-player  { border-right:none; border-bottom:1px solid var(--border); }
+    .mr-score-section { grid-template-columns:1fr; }
+    .mr-score-vs { display:none; }
+    .mr-score-opp { border-left:none; border-top:1px solid var(--border); text-align:left; }
+    .mr-score-opp .mr-score-ring-wrap { flex-direction:row; }
+    .mr-score-opp .mr-score-handle { justify-content:flex-start; }
+    .mr-progress-section { grid-template-columns:1fr; }
+    .mr-prob-table-head { grid-template-columns:44px 1fr 96px 96px; }
+    .mr-prob-row        { grid-template-columns:44px 1fr 96px 96px; }
+    .mr-timer { font-size:40px; }
+    .mr-main { padding:20px 16px 60px; }
+    .mr-lobby-foot { flex-direction:column; align-items:stretch; }
+    .mr-score-me, .mr-score-opp { padding:24px 24px; }
   }
 `
 
@@ -454,42 +342,40 @@ function formatTime(ms) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
+function ScoreRing({ score, total, isMe }) {
+  const r = 42, cx = 52, cy = 52
+  const circ = 2 * Math.PI * r
+  const offset = circ * (1 - (total > 0 ? score / total : 0))
+  return (
+    <svg className="mr-ring-svg" width="104" height="104" viewBox="0 0 104 104">
+      <circle className="mr-ring-track" cx={cx} cy={cy} r={r} />
+      <circle className={`mr-ring-fill ${isMe ? 'me' : 'opp'}`} cx={cx} cy={cy} r={r}
+        strokeDasharray={circ} strokeDashoffset={offset}
+        style={{ transform: 'rotate(-90deg)', transformOrigin: '52px 52px' }} />
+      <text className={`mr-ring-num ${isMe ? 'me' : ''}`} x={cx} y={cy}>{score}</text>
+    </svg>
+  )
+}
+
 function LoadingScreen() {
   const [step, setStep] = useState(0)
-  const steps = [
-    'Verifying players',
-    'Fetching problems from Codeforces',
-    'Setting up match room',
-  ]
-
+  const steps = ['Verifying players', 'Fetching problems from Codeforces', 'Setting up match room']
   useEffect(() => {
     const t1 = setTimeout(() => setStep(1), 600)
     const t2 = setTimeout(() => setStep(2), 1400)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
-
   return (
     <div className="mr-loading">
       <div className="mr-loading-inner">
         <div className="mr-loading-eyebrow">CF Arena</div>
-
-        <div className="mr-loading-title">
-          Match<br /><span>Starting.</span>
-        </div>
+        <div className="mr-loading-title">Match<br /><span>Starting.</span></div>
         <div className="mr-loading-sub">// fetching problems &amp; initializing room</div>
-
-        <div className="mr-loading-bar-wrap">
-          <div className="mr-loading-bar" />
-        </div>
-
+        <div className="mr-loading-bar-wrap"><div className="mr-loading-bar" /></div>
         <div className="mr-loading-steps">
           {steps.map((s, i) => (
-            <div
-              key={i}
-              className={`mr-loading-step ${i === step ? 'active' : i < step ? 'done' : ''}`}
-            >
-              <div className="mr-ls-icon" />
-              <span>{s}</span>
+            <div key={i} className={`mr-loading-step ${i === step ? 'active' : i < step ? 'done' : ''}`}>
+              <div className="mr-ls-icon" /><span>{s}</span>
             </div>
           ))}
         </div>
@@ -498,69 +384,143 @@ function LoadingScreen() {
   )
 }
 
+function UnlockBanner({ problemName }) {
+  return (
+    <div className="unlock-banner">
+      <div className="unlock-banner-inner">
+        <div className="unlock-banner-icon"><div className="unlock-banner-icon-dot" /></div>
+        <div className="unlock-banner-text">
+          <span className="unlock-banner-label">unlocked</span>
+          <span className="unlock-banner-name">{problemName}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MatchRoom() {
   const { inviteCode } = useParams()
-  const { state } = useLocation()
-  const navigate = useNavigate()
+  const { state }      = useLocation()
+  const navigate       = useNavigate()
 
-  const [match, setMatch] = useState(null)
-  const [myHandle, setMyHandle] = useState(null)
+  const [match, setMatch]                 = useState(null)
+  const [myHandle, setMyHandle]           = useState(null)
   const [myHandleReady, setMyHandleReady] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(null)
-  const [loadError, setLoadError] = useState(null)
-  const [toast, setToast] = useState(null)
-  const [isReadying, setIsReadying] = useState(false)
-  const [isStarting, setIsStarting] = useState(false)
-  const [codeCopied, setCodeCopied] = useState(false)
-  const [showLoading, setShowLoading] = useState(false)
+  const [timeLeft, setTimeLeft]           = useState(null)
+  const [loadError, setLoadError]         = useState(null)
+  const [toast, setToast]                 = useState(null)
+  const [isReadying, setIsReadying]       = useState(false)
+  const [isStarting, setIsStarting]       = useState(false)
+  const [codeCopied, setCodeCopied]       = useState(false)
+  const [showLoading, setShowLoading]     = useState(false)
 
-  const wsRef = useRef(null)
-  const timerRef = useRef(null)
-  const prevStatusRef = useRef(null)
+  const [justSolvedRows,   setJustSolvedRows]   = useState({})
+  const [justUnlockedRows, setJustUnlockedRows] = useState({})
+  const [justPopNums,      setJustPopNums]      = useState({})
+  // Track which rows just got AC chip so we can key them for re-mount animation
+  const [justAcRows,       setJustAcRows]       = useState({})
+  const [scorePopMe,       setScorePopMe]       = useState(false)
+  const [scorePopOpp,      setScorePopOpp]      = useState(false)
+  const [unlockBanner,     setUnlockBanner]     = useState(null)
+
+  const wsRef          = useRef(null)
+  const timerRef       = useRef(null)
+  const prevStatusRef  = useRef(null)
+  const prevResultsRef = useRef(null)
+  const prevCurIdxRef  = useRef(null)
+  const amIUser1Ref    = useRef(false)
+
+  const navRole = state?.role || 'guest'
 
   const showToast = (text, type = 'ok') => {
     setToast({ text, type })
     setTimeout(() => setToast(null), 3500)
   }
 
+  const detectChanges = useCallback((data) => {
+    const newP1 = toResultsArray(data?.player1Results)
+    const newP2 = toResultsArray(data?.player2Results)
+
+    // First call — seed refs, fire nothing
+    if (prevResultsRef.current === null) {
+      prevResultsRef.current = { p1: newP1, p2: newP2 }
+      prevCurIdxRef.current  = data?.curIdx ?? 0
+      return
+    }
+
+    const oldP1 = prevResultsRef.current.p1
+    const oldP2 = prevResultsRef.current.p2
+
+    const newlySolvedP1 = []
+    const newlySolvedP2 = []
+    newP1.forEach((r, i) => { if (r === 'SOLVED' && oldP1[i] !== 'SOLVED') newlySolvedP1.push(i) })
+    newP2.forEach((r, i) => { if (r === 'SOLVED' && oldP2[i] !== 'SOLVED') newlySolvedP2.push(i) })
+
+    // Row flash + number pop + AC chip re-mount for any player's solve
+    ;[...new Set([...newlySolvedP1, ...newlySolvedP2])].forEach(idx => {
+      setJustSolvedRows(p => ({ ...p, [idx]: true }))
+      setJustPopNums(p => ({ ...p, [idx]: true }))
+      setJustAcRows(p => ({ ...p, [idx]: Date.now() })) // unique key forces chip re-mount
+      setTimeout(() => {
+        setJustSolvedRows(p => { const n = { ...p }; delete n[idx]; return n })
+        setJustPopNums(p => { const n = { ...p }; delete n[idx]; return n })
+      }, 2000)
+    })
+
+    // Score ring pop
+    if (newlySolvedP1.length > 0) { setScorePopMe(true);  setTimeout(() => setScorePopMe(false),  600) }
+    if (newlySolvedP2.length > 0) { setScorePopOpp(true); setTimeout(() => setScorePopOpp(false), 600) }
+
+    // Fireworks only for MY solve — no modal, just celebration + inline row animation
+    const iAmUser1    = amIUser1Ref.current
+    const myNewSolves = iAmUser1 ? newlySolvedP1 : newlySolvedP2
+    if (myNewSolves.length > 0) {
+      celebrateSolve()
+    }
+
+    // Unlock banner when curIdx advances
+    const newCurIdx = data?.curIdx ?? 0
+    const oldCurIdx = prevCurIdxRef.current
+    if (oldCurIdx !== null && newCurIdx > oldCurIdx) {
+      const probs = Array.isArray(data?.problems) ? data.problems : []
+      setJustUnlockedRows(p => ({ ...p, [newCurIdx]: true }))
+      setUnlockBanner(parseProblem(probs[newCurIdx], newCurIdx).fullLabel)
+      setTimeout(() => {
+        setJustUnlockedRows(p => { const n = { ...p }; delete n[newCurIdx]; return n })
+        setUnlockBanner(null)
+      }, 2800)
+    }
+
+    prevCurIdxRef.current  = newCurIdx
+    prevResultsRef.current = { p1: newP1, p2: newP2 }
+  }, [])
+
   useEffect(() => {
     axiosInstance.get(API_PATHS.USER.ME)
-      .then((r) => { setMyHandle(r?.data?.cfHandle || null); setMyHandleReady(true) })
+      .then(r => { setMyHandle(r?.data?.cfHandle || null); setMyHandleReady(true) })
       .catch(() => { setMyHandleReady(true) })
   }, [])
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await axiosInstance.get(
-        `${API_PATHS.MATCH.STATUS}?inviteCode=${encodeURIComponent(inviteCode)}`
-      )
+      const res  = await axiosInstance.get(`${API_PATHS.MATCH.STATUS}?inviteCode=${encodeURIComponent(inviteCode)}`)
       const data = res?.data
       if (data) {
         const prev = prevStatusRef.current
         if ((prev === 'WAITING' || prev === 'READY') && data.status === 'ONGOING') {
           setShowLoading(true)
-          const hideAfterProblems = () => {
-            if (data.problems && data.problems.length > 0) {
-              setTimeout(() => setShowLoading(false), 800)
-            } else {
-              setTimeout(() => setShowLoading(false), 2000)
-            }
-          }
-          hideAfterProblems()
+          setTimeout(() => setShowLoading(false), data.problems?.length > 0 ? 800 : 2000)
         }
         prevStatusRef.current = data.status
+        detectChanges(data)
         setMatch(data)
-
-        if (showLoading && data.problems && data.problems.length > 0) {
-          setTimeout(() => setShowLoading(false), 600)
-        }
-
+        if (showLoading && data.problems?.length > 0) setTimeout(() => setShowLoading(false), 600)
         if (data.status === 'FINISHED') navigate(`/results/${inviteCode}`)
       }
     } catch (err) {
       setLoadError(err?.response?.data?.message || err.message || 'Could not load match.')
     }
-  }, [inviteCode, navigate, showLoading])
+  }, [inviteCode, navigate, showLoading, detectChanges])
 
   useEffect(() => {
     fetchStatus()
@@ -576,11 +536,11 @@ export default function MatchRoom() {
       s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js'
       s2.onload = () => {
         try {
-          const sock = new window.SockJS(`${WS_BASE.replace(/^ws/, 'http')}/ws`)
+          const sock   = new window.SockJS(`${WS_BASE.replace(/^ws/, 'http')}/ws`)
           const client = window.Stomp.over(sock)
           client.debug = null
           client.connect({}, () => {
-            client.subscribe(`/topic/match/${inviteCode}`, (msg) => {
+            client.subscribe(`/topic/match/${inviteCode}`, msg => {
               try {
                 const data = JSON.parse(msg.body)
                 const prev = prevStatusRef.current
@@ -589,6 +549,7 @@ export default function MatchRoom() {
                   setTimeout(() => setShowLoading(false), data.problems?.length > 0 ? 800 : 2000)
                 }
                 prevStatusRef.current = data.status
+                detectChanges(data)
                 setMatch(data)
                 if (data?.status === 'FINISHED') navigate(`/results/${inviteCode}`)
               } catch {}
@@ -601,71 +562,28 @@ export default function MatchRoom() {
     }
     document.head.appendChild(s1)
     return () => { try { wsRef.current?.disconnect?.() } catch {} }
-  }, [inviteCode, navigate])
+  }, [inviteCode, navigate, detectChanges])
 
   useEffect(() => {
-    if (!match?.endTime || match.status !== 'ONGOING') {
-      clearInterval(timerRef.current); return
-    }
+    if (!match?.endTime || match.status !== 'ONGOING') { clearInterval(timerRef.current); return }
     const tick = () => {
       const left = new Date(match.endTime).getTime() - Date.now()
       setTimeLeft(left)
       if (left <= 0) { clearInterval(timerRef.current); fetchStatus() }
     }
-    tick()
-    clearInterval(timerRef.current)
-    timerRef.current = setInterval(tick, 1000)
+    tick(); clearInterval(timerRef.current); timerRef.current = setInterval(tick, 1000)
     return () => clearInterval(timerRef.current)
   }, [match?.endTime, match?.status, fetchStatus])
 
   useEffect(() => {
     if (!match) return
-    const curIdx = match?.curIdx ?? 0
-    if (curIdx > 5) navigate(`/results/${inviteCode}`)
+    if ((match?.curIdx ?? 0) > 5) navigate(`/results/${inviteCode}`)
   }, [match, navigate, inviteCode])
 
-  const onReady = async () => {
-    setIsReadying(true)
-    try {
-      await axiosInstance.post(`${API_PATHS.MATCH.JOIN}?inviteCode=${encodeURIComponent(inviteCode)}`)
-      showToast('Ready! Waiting for host…')
-      fetchStatus()
-    } catch (err) {
-      showToast(err?.response?.data?.message || 'Failed to ready up.', 'error')
-    } finally { setIsReadying(false) }
-  }
-
-  const onStart = async () => {
-    setIsStarting(true)
-    setShowLoading(true)
-    try {
-      await axiosInstance.post(`${API_PATHS.MATCH.START}?inviteCode=${encodeURIComponent(inviteCode)}`)
-      fetchStatus()
-    } catch (err) {
-      setShowLoading(false)
-      showToast(err?.response?.data?.message || 'Cannot start yet.', 'error')
-    } finally { setIsStarting(false) }
-  }
-
-  const copyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(inviteCode)
-      setCodeCopied(true)
-      showToast('Invite code copied!')
-      setTimeout(() => setCodeCopied(false), 2000)
-    } catch { showToast('Copy failed.', 'error') }
-  }
-
-  // ── Derived state ──
-  const navRole = state?.role || 'guest'
-
-  // Once myHandle is loaded, use exact match (case-insensitive) against match users.
-  // Until loaded, fall back to navRole so lobby shows correctly.
   const amIUser1 = myHandleReady
-    ? (myHandle
-        ? match?.user1?.toLowerCase() === myHandle.toLowerCase()
-        : navRole === 'host')
+    ? (myHandle ? match?.user1?.toLowerCase() === myHandle.toLowerCase() : navRole === 'host')
     : navRole === 'host'
+  amIUser1Ref.current = amIUser1
 
   const isHost  = amIUser1
   const isGuest = myHandleReady && myHandle
@@ -677,87 +595,107 @@ export default function MatchRoom() {
   const meScore   = amIUser1 ? (match?.score1 ?? 0) : (match?.score2 ?? 0)
   const oppScore  = amIUser1 ? (match?.score2 ?? 0) : (match?.score1 ?? 0)
 
-  const problems      = match?.problems || []
+  const problems      = Array.isArray(match?.problems) ? match.problems : []
   const totalProblems = problems.length || 1
   const curIdx        = match?.curIdx ?? 0
   const mePct         = Math.round((meScore / totalProblems) * 100)
   const oppPct        = Math.round((oppScore / totalProblems) * 100)
 
-  const matchStatus  = match?.status || 'WAITING'
-  const isLobby      = matchStatus === 'WAITING' || matchStatus === 'READY'
-  const isOngoing    = matchStatus === 'ONGOING'
-  const timerUrgent  = timeLeft !== null && timeLeft < 5 * 60 * 1000
-  const guestJoined  = match?.user2 != null
-  const guestReady   = guestJoined && matchStatus === 'READY'
+  const matchStatus   = match?.status || 'WAITING'
+  const isLobby       = matchStatus === 'WAITING' || matchStatus === 'READY'
+  const isOngoing     = matchStatus === 'ONGOING'
+  const timerUrgent   = timeLeft !== null && timeLeft < 5 * 60 * 1000
+  const guestJoined   = match?.user2 != null
+  const guestReady    = guestJoined && matchStatus === 'READY'
   const canClickReady = !isHost && !guestJoined && navRole === 'guest'
 
   const dotClass  = isOngoing ? 'live' : matchStatus === 'FINISHED' ? 'done' : 'waiting'
   const statusTxt = !match ? 'Loading…'
-    : isOngoing    ? 'Live — match in progress'
+    : isOngoing ? 'Live — match in progress'
     : matchStatus === 'FINISHED' ? 'Match finished'
-    : matchStatus === 'READY'   ? 'Both players ready — host can start'
+    : matchStatus === 'READY' ? 'Both players ready — host can start'
     : 'Waiting for player 2 to join…'
 
   function myProblemState(i) {
-    const result = match?.player1Results?.[i]
-
-    if (result === 'SOLVED') return 'solved'
+    const results = toResultsArray(match?.player1Results)
+    const oppResults = toResultsArray(match?.player2Results)
+    const myR  = amIUser1 ? results[i]    : oppResults[i]
+    if (myR === 'SOLVED') return 'solved'
     if (i === curIdx) return 'current'
     return 'locked'
   }
-
   function oppProblemState(i) {
-    const result = match?.player2Results?.[i]
-
-    if (result === 'SOLVED') return 'solved'
+    const results = toResultsArray(match?.player1Results)
+    const oppResults = toResultsArray(match?.player2Results)
+    const oppR = amIUser1 ? oppResults[i] : results[i]
+    if (oppR === 'SOLVED') return 'solved'
     if (i === curIdx) return 'working'
     return 'locked'
+  }
+
+  const onReady = async () => {
+    setIsReadying(true)
+    try {
+      await axiosInstance.post(`${API_PATHS.MATCH.JOIN}?inviteCode=${encodeURIComponent(inviteCode)}`)
+      showToast('Ready! Waiting for host…'); fetchStatus()
+    } catch (err) { showToast(err?.response?.data?.message || 'Failed to ready up.', 'error') }
+    finally { setIsReadying(false) }
+  }
+
+  const onStart = async () => {
+    setIsStarting(true); setShowLoading(true)
+    try {
+      await axiosInstance.post(`${API_PATHS.MATCH.START}?inviteCode=${encodeURIComponent(inviteCode)}`)
+      fetchStatus()
+    } catch (err) { setShowLoading(false); showToast(err?.response?.data?.message || 'Cannot start yet.', 'error') }
+    finally { setIsStarting(false) }
+  }
+
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteCode)
+      setCodeCopied(true); showToast('Invite code copied!')
+      setTimeout(() => setCodeCopied(false), 2000)
+    } catch { showToast('Copy failed.', 'error') }
   }
 
   return (
     <>
       <style>{css}</style>
-
       {showLoading && <LoadingScreen />}
+      {unlockBanner && <UnlockBanner problemName={unlockBanner} />}
 
       <div className="mr">
         <Navbar onCfSaved={() => showToast('CF handle updated!')} />
         <main className="mr-main">
-
-          {/* Top bar */}
           <div className="mr-topbar">
             <div>
               <div className="mr-tag">CF Arena · Match Room</div>
               <div className="mr-title">code_<em>{inviteCode}</em></div>
             </div>
             {isOngoing && (
-              <div>
+              <div className="mr-timer-block">
                 <div className={`mr-timer ${timerUrgent ? 'urgent' : ''}`}>
                   {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
                 </div>
-                <div className="mr-timer-lbl">remaining</div>
+                <div className="mr-timer-lbl">time remaining</div>
               </div>
             )}
           </div>
 
-          {/* Status */}
-          <div className="mr-status">
+          <div className={`mr-status ${isOngoing ? 'live' : ''}`}>
             <span className={`mr-dot ${dotClass}`} />
             <span className="mr-status-txt">{statusTxt}</span>
           </div>
 
           {loadError && <div className="mr-err">{loadError}</div>}
 
-          {/* ── LOBBY ── */}
           {isLobby && match && (
             <div className="mr-lobby">
               <div className="mr-lobby-head">
-                <div className="mr-lobby-title">
-                  {matchStatus === 'READY' ? 'Ready to fight.' : 'Waiting for players.'}
-                </div>
+                <div className="mr-lobby-title">{matchStatus === 'READY' ? 'Ready to fight.' : 'Waiting for players.'}</div>
                 <div className="mr-lobby-sub">// {match.duration || '?'}-minute match · {problems.length || '?'} problems</div>
               </div>
-
               <div className="mr-players">
                 <div className="mr-player">
                   <div className="mr-player-lbl">Player 1 · Host</div>
@@ -769,39 +707,25 @@ export default function MatchRoom() {
                 </div>
                 <div className="mr-player">
                   <div className="mr-player-lbl">Player 2 · Guest</div>
-                  <div className={`mr-player-name ${!guestJoined ? 'empty' : ''}`}>
-                    {match.user2 || 'waiting…'}
-                  </div>
+                  <div className={`mr-player-name ${!guestJoined ? 'empty' : ''}`}>{match.user2 || 'waiting…'}</div>
                   <div className="mr-badges">
-                    {guestJoined && (
-                      <span className={`mr-badge ${guestReady ? 'ready' : 'joined'}`}>
-                        {guestReady ? 'ready' : 'joined'}
-                      </span>
-                    )}
+                    {guestJoined && <span className={`mr-badge ${guestReady ? 'ready' : 'joined'}`}>{guestReady ? 'ready' : 'joined'}</span>}
                     {isGuest && <span className="mr-badge you">you</span>}
                   </div>
                 </div>
               </div>
-
               <div className="mr-code-row">
-                <div className="mr-code-lbl-block">
-                  <span className="mr-code-lbl">Invite Code</span>
-                </div>
+                <div className="mr-code-lbl-block"><span className="mr-code-lbl">Invite Code</span></div>
                 <div className="mr-code-val">{inviteCode}</div>
                 <button className={`mr-copy-btn ${codeCopied ? 'copied' : ''}`} onClick={copyCode}>
                   {codeCopied ? '✓ Copied' : '⎘ Copy'}
                 </button>
               </div>
-
               <div className="mr-lobby-foot">
                 <div className="mr-hint">
                   {isHost
-                    ? guestReady
-                      ? <>Opponent is ready. <em>Start when you are.</em></>
-                      : 'Share the code. Start unlocks once opponent clicks Ready.'
-                    : guestJoined
-                      ? "You're in. Waiting for host to start."
-                      : <>Click <em>Ready Up</em> to signal you're set.</>}
+                    ? guestReady ? <>Opponent is ready. <em>Start when you are.</em></> : 'Share the code. Start unlocks once opponent clicks Ready.'
+                    : guestJoined ? "You're in. Waiting for host to start." : <>Click <em>Ready Up</em> to signal you're set.</>}
                 </div>
                 {isHost && (
                   <button className="mr-btn-primary" onClick={onStart} disabled={!guestReady || isStarting}>
@@ -820,50 +744,46 @@ export default function MatchRoom() {
             </div>
           )}
 
-          {/* ── ONGOING ── */}
           {isOngoing && match && (
             <>
-              {/* Scoreboard */}
-              <div className="mr-score">
-                <div className="mr-score-me">
+              <div className="mr-score-section">
+                <div className={`mr-score-me ${scorePopMe ? 'score-pop' : ''}`}>
                   <div className="mr-score-handle">
-                    <span className="mr-score-handle-dot" />
-                    {meHandle || 'you'} · you
+                    <span className="mr-score-handle-pip" />
+                    {meHandle || 'you'}&nbsp;·&nbsp;you
                   </div>
-                  <div className="mr-score-num">{meScore}</div>
-                  <div className="mr-score-lbl">problems solved</div>
+                  <div className="mr-score-ring-wrap">
+                    <ScoreRing score={meScore} total={totalProblems} isMe={true} />
+                    <div><div className="mr-score-lbl">problems solved</div></div>
+                  </div>
                 </div>
-                <div className="mr-score-vs">VS</div>
-                <div className="mr-score-opp">
+                <div className="mr-score-vs"><div className="mr-vs-inner">VS</div></div>
+                <div className={`mr-score-opp ${scorePopOpp ? 'score-pop' : ''}`}>
                   <div className="mr-score-handle">{oppHandle || 'opponent'}</div>
-                  <div className="mr-score-num" style={{ textAlign: 'right' }}>{oppScore}</div>
-                  <div className="mr-score-lbl" style={{ textAlign: 'right' }}>problems solved</div>
-                </div>
-              </div>
-
-              {/* Progress bars */}
-              <div className="mr-stats-row">
-                <div className="mr-stat-card">
-                  <div className="mr-stat-top">
-                    <span className="mr-stat-label">Your progress</span>
-                    <span className="mr-stat-pct me">{mePct}%</span>
-                  </div>
-                  <div className="mr-stat-bar-bg">
-                    <div className="mr-stat-bar-fill me" style={{ width: `${mePct}%` }} />
-                  </div>
-                </div>
-                <div className="mr-stat-card">
-                  <div className="mr-stat-top">
-                    <span className="mr-stat-label">{oppHandle || 'Opponent'}</span>
-                    <span className="mr-stat-pct">{oppPct}%</span>
-                  </div>
-                  <div className="mr-stat-bar-bg">
-                    <div className="mr-stat-bar-fill opp" style={{ width: `${oppPct}%` }} />
+                  <div className="mr-score-ring-wrap">
+                    <ScoreRing score={oppScore} total={totalProblems} isMe={false} />
+                    <div><div className="mr-score-lbl">problems solved</div></div>
                   </div>
                 </div>
               </div>
 
-              {/* Problem table */}
+              <div className="mr-progress-section">
+                <div className="mr-prog-card">
+                  <div className="mr-prog-head">
+                    <span className="mr-prog-label">Your progress</span>
+                    <span className="mr-prog-pct me">{mePct}%</span>
+                  </div>
+                  <div className="mr-prog-track"><div className="mr-prog-fill me" style={{ width: `${mePct}%` }} /></div>
+                </div>
+                <div className="mr-prog-card">
+                  <div className="mr-prog-head">
+                    <span className="mr-prog-label">{oppHandle || 'Opponent'}</span>
+                    <span className="mr-prog-pct opp">{oppPct}%</span>
+                  </div>
+                  <div className="mr-prog-track"><div className="mr-prog-fill opp" style={{ width: `${oppPct}%` }} /></div>
+                </div>
+              </div>
+
               <div className="mr-prob-table">
                 <div className="mr-prob-table-head">
                   <span className="mr-th">#</span>
@@ -871,42 +791,48 @@ export default function MatchRoom() {
                   <span className="mr-th center">You</span>
                   <span className="mr-th center">{oppHandle || 'Opponent'}</span>
                 </div>
-
                 {problems.map((raw, i) => {
                   const { fullLabel, url } = parseProblem(raw, i)
                   const myState  = myProblemState(i)
                   const oppState = oppProblemState(i)
-                  const isCurrent = i === curIdx
-                  const isSolved  = myState === 'solved'
-
+                  // Use justAcRows[i] as key suffix so chip remounts and re-animates on solve
+                  const acKey = justAcRows[i] || 0
                   return (
-                    <div
-                      className={`mr-prob-row ${isCurrent ? 'current-row' : ''} ${isSolved ? 'solved-row' : ''}`}
-                      key={i}
-                    >
-                      <div className={`mr-prob-n ${myState === 'solved' ? 'solved' : myState === 'current' ? 'current' : ''}`}>
-                        {i + 1}
+                    <div key={i} className={[
+                      'mr-prob-row',
+                      i === curIdx         ? 'current-row'   : '',
+                      myState === 'solved' ? 'solved-row'    : '',
+                      justSolvedRows[i]    ? 'just-solved'   : '',
+                      justUnlockedRows[i]  ? 'just-unlocked' : '',
+                    ].filter(Boolean).join(' ')}>
+                      <div className={[
+                        'mr-prob-n',
+                        myState === 'solved'  ? 'solved'   : '',
+                        myState === 'current' ? 'current'  : '',
+                        justPopNums[i]        ? 'just-pop' : '',
+                      ].filter(Boolean).join(' ')}>
+                        {myState === 'solved' ? '✓' : i + 1}
                       </div>
-
                       <div className={`mr-prob-name ${myState === 'current' ? 'current' : ''}`}>
-                        {myState === 'current' ? (
-                          <a href={url} target="_blank" rel="noreferrer">
-                            {fullLabel}
-                            <span className="mr-prob-link-icon">↗</span>
-                          </a>
-                        ) : (
-                          fullLabel
-                        )}
+                        {myState === 'current'
+                          ? <a href={url} target="_blank" rel="noreferrer">{fullLabel}<span className="mr-prob-link-icon">↗</span></a>
+                          : fullLabel}
                       </div>
-
                       <div className="mr-prob-cell">
-                        {myState === 'solved'  && <span className="mr-state ac">✓ Solved</span>}
+                        {myState === 'solved'  && (
+                          <span key={`ac-me-${i}-${acKey}`} className={`mr-state ac ${justAcRows[i] ? 'just-ac' : ''}`}>
+                            ✓ Solved
+                          </span>
+                        )}
                         {myState === 'current' && <span className="mr-state live"><span className="mr-state-dot" />Live</span>}
                         {myState === 'locked'  && <span className="mr-state lock">—</span>}
                       </div>
-
                       <div className="mr-prob-cell">
-                        {oppState === 'solved'  && <span className="mr-state ac">✓ Solved</span>}
+                        {oppState === 'solved'  && (
+                          <span key={`ac-opp-${i}-${acKey}`} className={`mr-state ac ${justAcRows[i] ? 'just-ac' : ''}`}>
+                            ✓ Solved
+                          </span>
+                        )}
                         {oppState === 'working' && <span className="mr-state live"><span className="mr-state-dot" />Live</span>}
                         {oppState === 'locked'  && <span className="mr-state lock">—</span>}
                       </div>
@@ -916,12 +842,8 @@ export default function MatchRoom() {
               </div>
             </>
           )}
-
         </main>
-
-        {toast && (
-          <div className={`mr-toast ${toast.type === 'error' ? 'error' : ''}`}>{toast.text}</div>
-        )}
+        {toast && <div className={`mr-toast ${toast.type === 'error' ? 'error' : ''}`}>{toast.text}</div>}
       </div>
     </>
   )
