@@ -1,18 +1,16 @@
-# Use Java 17 (Spring Boot compatible)
 FROM eclipse-temurin:17-jdk
 
-# Set working directory
 WORKDIR /app
 
-# Copy everything
-COPY . .
+# Copy backend only
+COPY Backend /app
 
-# Build using Maven wrapper
+# Move into correct directory
+WORKDIR /app
+
 RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests
 
-# Expose port
 EXPOSE 8080
 
-# Run app
-CMD ["java", "-jar", "target/*.jar"]
+CMD ["sh", "-c", "java -jar target/*.jar"]
