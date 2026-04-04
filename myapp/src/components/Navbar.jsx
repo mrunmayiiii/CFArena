@@ -108,7 +108,7 @@ export default function Navbar({ onCfSaved }) {
       <style>{navCss}</style>
 
       <header className="nav">
-        <Link to="/" className="nav-brand">CF<em>_</em>ARENA</Link>
+        <Link to="/dashboard" className="nav-brand">CF<em>_</em>ARENA</Link>
         <div className="nav-right">
           <span className="nav-user-pill">{userEmail}</span>
           <button className="nav-btn accent" onClick={openCfModal} title="Edit Codeforces handle">
