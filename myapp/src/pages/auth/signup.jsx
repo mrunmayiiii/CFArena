@@ -23,7 +23,7 @@ export default function Signup() {
   }
 
   const handleGoogleLogin = () => {
-  window.location.href = `${BASE_URL}/${API_PATHS.AUTH.OAUTH}`  // ✅ uses localhost:8080
+  window.location.href = `${BASE_URL.replace(/\/$/, "")}/${API_PATHS.AUTH.OAUTH}`  // ✅ uses localhost:8080
 }
 
   const onSubmit = async (event) => {
