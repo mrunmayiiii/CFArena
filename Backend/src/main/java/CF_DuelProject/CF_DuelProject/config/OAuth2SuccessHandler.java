@@ -44,7 +44,11 @@ public void onAuthenticationSuccess(HttpServletRequest request,
 
     String token = jwtService.generateToken(email);
     System.out.println("JWT Token: " + token);
+    
     String frontendUrl = System.getenv("FRONTEND_URL");
+    if (frontendUrl == null || frontendUrl.isEmpty()) {
+        frontendUrl = "http://localhost:5173";
+    }
 
     String redirectUrl = frontendUrl + "/auth/callback?token=" + token;
     

@@ -2,6 +2,7 @@ package CF_DuelProject.CF_DuelProject.controller;
 
 import java.io.Console;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +34,7 @@ public class MatchController {
         String email = authentication.getName();
         String cfHandle = userService.getCfHandleByEmail(email);
 
-        return matchService.createMatch(cfHandle, req.duration);
+        return matchService.createMatch(cfHandle, req.duration,req.difficulty);
     }
 
     // ✅ JOIN (auto READY)
@@ -63,4 +64,11 @@ public class MatchController {
     public Map<String, Object> getStatus(@RequestParam String inviteCode) {
         return matchService.getMatchStatus(inviteCode);
     }
+
+    @GetMapping("/history/{userId}")
+    public ResponseEntity<?> getMatchHistory(@PathVariable String userId) {
+        System.out.println("Fetching History API for User: " + userId);
+        return ResponseEntity.ok(matchService.getUserMatchHistory(userId));
+    }
+
 }

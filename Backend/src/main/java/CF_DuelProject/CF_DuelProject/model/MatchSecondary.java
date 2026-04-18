@@ -17,7 +17,7 @@ public class MatchSecondary {
   
     @Id
     private String id;
-
+    private String difficulty;
     private String user1;
     private String user2;
     private int score1;

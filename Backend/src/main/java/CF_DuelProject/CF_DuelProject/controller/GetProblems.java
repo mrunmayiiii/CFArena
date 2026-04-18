@@ -18,6 +18,6 @@ public class GetProblems {
 
     @GetMapping("/{u1}/{u2}")
     public List<String> getProblems(@PathVariable String u1,@PathVariable String u2) {
-        return problemService.getMatchProblems(u1,u2);
+        return problemService.getMatchProblems(u1,u2,"EASY");
     }
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import axiosInstance from '../../utils/axiosInstance'
 import { API_PATHS } from '../../utils/apiPaths'
+import { fetchCFAvatar } from '../../utils/cfApi'
 import Navbar from '../../components/Navbar'
 import { celebrateSolve } from './fireworks'
 
@@ -414,6 +415,9 @@ export default function MatchRoom() {
   const [codeCopied, setCodeCopied]       = useState(false)
   const [showLoading, setShowLoading]     = useState(false)
 
+  const [meAvatar, setMeAvatar]           = useState(null)
+  const [oppAvatar, setOppAvatar]         = useState(null)
+
   const [justSolvedRows,   setJustSolvedRows]   = useState({})
   const [justUnlockedRows, setJustUnlockedRows] = useState({})
   const [justPopNums,      setJustPopNums]      = useState({})
@@ -592,6 +596,19 @@ export default function MatchRoom() {
 
   const meHandle  = amIUser1 ? match?.user1 : match?.user2
   const oppHandle = amIUser1 ? match?.user2 : match?.user1
+
+  // Fetch avatars whenever handles are confirmed
+  useEffect(() => {
+    if (meHandle && meHandle !== 'waiting…') {
+      fetchCFAvatar(meHandle).then(url => { if(url) setMeAvatar(url) })
+    }
+  }, [meHandle])
+
+  useEffect(() => {
+    if (oppHandle && oppHandle !== 'waiting…') {
+      fetchCFAvatar(oppHandle).then(url => { if(url) setOppAvatar(url) })
+    }
+  }, [oppHandle])
   const meScore   = amIUser1 ? (match?.score1 ?? 0) : (match?.score2 ?? 0)
   const oppScore  = amIUser1 ? (match?.score2 ?? 0) : (match?.score1 ?? 0)
 
@@ -631,6 +648,13 @@ export default function MatchRoom() {
     if (oppR === 'SOLVED') return 'solved'
     if (i === curIdx) return 'working'
     return 'locked'
+  }
+
+  const renderAvatar = (handle, size = '48px') => {
+    const av = handle === meHandle ? meAvatar : handle === oppHandle ? oppAvatar : null
+    const glowCol = handle === meHandle ? '#c8ff00' : '#ff6b6b'
+    if (!av || !handle || handle === 'waiting…') return null
+    return <img src={av} alt={handle} style={{ width: size, height: size, borderRadius: '50%', border: `1px solid ${glowCol}`, objectFit: 'cover', flexShrink: 0, boxShadow: `0 0 12px ${glowCol}33` }} />
   }
 
   const onReady = async () => {
@@ -699,18 +723,28 @@ export default function MatchRoom() {
               <div className="mr-players">
                 <div className="mr-player">
                   <div className="mr-player-lbl">Player 1 · Host</div>
-                  <div className="mr-player-name">{match.user1 || '—'}</div>
-                  <div className="mr-badges">
-                    {match.user1 && <span className="mr-badge host">host</span>}
-                    {isHost && <span className="mr-badge you">you</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                    {renderAvatar(match.user1, '60px')}
+                    <div>
+                      <div className="mr-player-name" style={{ marginBottom: 0 }}>{match.user1 || '—'}</div>
+                      <div className="mr-badges" style={{ marginTop: '8px' }}>
+                        {match.user1 && <span className="mr-badge host">host</span>}
+                        {isHost && <span className="mr-badge you">you</span>}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="mr-player">
                   <div className="mr-player-lbl">Player 2 · Guest</div>
-                  <div className={`mr-player-name ${!guestJoined ? 'empty' : ''}`}>{match.user2 || 'waiting…'}</div>
-                  <div className="mr-badges">
-                    {guestJoined && <span className={`mr-badge ${guestReady ? 'ready' : 'joined'}`}>{guestReady ? 'ready' : 'joined'}</span>}
-                    {isGuest && <span className="mr-badge you">you</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+                    {renderAvatar(match.user2, '60px')}
+                    <div>
+                      <div className={`mr-player-name ${!guestJoined ? 'empty' : ''}`} style={{ marginBottom: 0 }}>{match.user2 || 'waiting…'}</div>
+                      <div className="mr-badges" style={{ marginTop: '8px' }}>
+                        {guestJoined && <span className={`mr-badge ${guestReady ? 'ready' : 'joined'}`}>{guestReady ? 'ready' : 'joined'}</span>}
+                        {isGuest && <span className="mr-badge you">you</span>}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -748,7 +782,8 @@ export default function MatchRoom() {
             <>
               <div className="mr-score-section">
                 <div className={`mr-score-me ${scorePopMe ? 'score-pop' : ''}`}>
-                  <div className="mr-score-handle">
+                  <div className="mr-score-handle" style={{ display: 'flex', alignItems: 'center' }}>
+                    {renderAvatar(meHandle, '24px')}
                     <span className="mr-score-handle-pip" />
                     {meHandle || 'you'}&nbsp;·&nbsp;you
                   </div>
@@ -759,7 +794,11 @@ export default function MatchRoom() {
                 </div>
                 <div className="mr-score-vs"><div className="mr-vs-inner">VS</div></div>
                 <div className={`mr-score-opp ${scorePopOpp ? 'score-pop' : ''}`}>
-                  <div className="mr-score-handle">{oppHandle || 'opponent'}</div>
+                  <div className="mr-score-handle" style={{ display: 'flex', alignItems: 'center' }}>
+                    {oppHandle || 'opponent'}
+                    <span className="mr-score-handle-pip" style={{ background: '#ff6b6b', boxShadow: 'none' }} />
+                    {renderAvatar(oppHandle, '24px')}
+                  </div>
                   <div className="mr-score-ring-wrap">
                     <ScoreRing score={oppScore} total={totalProblems} isMe={false} />
                     <div><div className="mr-score-lbl">problems solved</div></div>

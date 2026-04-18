@@ -142,7 +142,7 @@ const css = `
     border-radius: var(--radius);
     padding: 16px 7px;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -161,7 +161,7 @@ const css = `
     text-transform: uppercase;
     color: var(--muted2);
   }
-  .mc-dur-btn:hover { border-color: var(--border2); }
+  .mc-dur-btn:hover { border-color: var(--border2); transform: scale(1.02); }
   .mc-dur-btn:hover .val { color: var(--text); }
   .mc-dur-btn.active {
     border-color: var(--accent);
@@ -169,6 +169,37 @@ const css = `
   }
   .mc-dur-btn.active .val { color: var(--accent); }
   .mc-dur-btn.active .unit { color: var(--accent); opacity: 0.6; }
+
+  /* ── Difficulty grid ── */
+  .mc-diff-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .mc-diff-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    text-align: center;
+  }
+  .mc-diff-btn .val {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--muted2);
+    text-transform: uppercase;
+  }
+  .mc-diff-btn:hover { border-color: var(--border2); transform: scale(1.02); }
+  .mc-diff-btn:hover .val { color: var(--text); }
+  .mc-diff-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .mc-diff-btn.active .val { color: var(--accent); }
 
   /* ── Error ── */
   .mc-error {
@@ -372,6 +403,7 @@ const css = `
 `
 
 const DURATIONS = [15, 30, 45, 60]
+const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD']
 
 function extractError(err) {
   const d = err?.response?.data
@@ -395,6 +427,7 @@ export default function MatchCreate() {
   const navigate = useNavigate()
 
   const [duration, setDuration]       = useState(30)
+  const [difficulty, setDifficulty]   = useState('EASY')
   const [isCreating, setIsCreating]   = useState(false)
   const [isStarting, setIsStarting]   = useState(false)
   const [match, setMatch]             = useState(null)
@@ -428,7 +461,8 @@ export default function MatchCreate() {
     setIsCreating(true)
     setCreateError(null)
     try {
-      const res = await axiosInstance.post(API_PATHS.MATCH.CREATE, { duration: Number(duration) })
+      const payload = { duration: Number(duration), difficulty: difficulty }
+      const res = await axiosInstance.post(API_PATHS.MATCH.CREATE, payload)
       const data = res?.data
       if (!data)            { setCreateError('Server returned an empty response.'); return }
       if (!data.inviteCode) { setCreateError(`Missing inviteCode: ${JSON.stringify(data)}`); return }
@@ -493,6 +527,21 @@ export default function MatchCreate() {
 
                 <div className="mc-card">
                   <div className="mc-section">
+                    <div className="mc-label">Difficulty</div>
+                    <div className="mc-diff-grid">
+                      {DIFFICULTIES.map((diff) => (
+                        <button
+                          key={diff}
+                          className={`mc-diff-btn ${difficulty === diff ? 'active' : ''}`}
+                          onClick={() => setDifficulty(diff)}
+                        >
+                          <span className="val">{diff}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mc-section">
                     <div className="mc-label">Match Duration</div>
                     <div className="mc-duration-grid">
                       {DURATIONS.map((d) => (
@@ -552,12 +601,12 @@ export default function MatchCreate() {
                   {/* Meta */}
                   <div className="mc-meta">
                     <div className="mc-meta-item">
-                      <div className="mc-meta-key">Duration</div>
-                      <div className="mc-meta-val">{duration} min</div>
+                      <div className="mc-meta-key">Difficulty</div>
+                      <div className="mc-meta-val" style={{ fontSize: '18px' }}>{difficulty}</div>
                     </div>
                     <div className="mc-meta-item">
-                      <div className="mc-meta-key">Status</div>
-                      <div className="mc-meta-val">{currentStatus}</div>
+                      <div className="mc-meta-key">Duration</div>
+                      <div className="mc-meta-val" style={{ fontSize: '18px' }}>{duration} min</div>
                     </div>
                   </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axiosInstance from '../utils/axiosInstance'
 import { API_PATHS } from '../utils/apiPaths'
+import { fetchCFAvatar } from '../utils/cfApi'
 import Navbar from '../components/Navbar'
 
 const css = `
@@ -75,6 +76,7 @@ export default function Dashboard() {
   const [joinCode, setJoinCode] = useState('')
   const [isJoining, setIsJoining] = useState(false)
   const [toast, setToast] = useState(null)
+  const [avatar, setAvatar] = useState(null)
 
   const [cfHandle, setCfHandle] = useState('')
   const [isSavingCf, setIsSavingCf] = useState(false)
@@ -86,7 +88,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     axiosInstance.get(API_PATHS.USER.ME)
-      .then((res) => { if (!res.data?.cfHandle) setModal('cf') })
+      .then(async (res) => { 
+        if (!res.data?.cfHandle) {
+          setModal('cf') 
+        } else {
+          const avUrl = await fetchCFAvatar(res.data.cfHandle)
+          if (avUrl) setAvatar(avUrl)
+        }
+      })
       .catch(() => {})
   }, [])
 
@@ -126,6 +135,11 @@ export default function Dashboard() {
         <Navbar onCfSaved={() => showToast('CF handle updated!')} />
 
         <main className="db-main">
+          {avatar && (
+            <div style={{ marginBottom: '24px', animation: 'fadeIn 0.5s ease-out' }}>
+              <img src={avatar} alt="Codeforces Avatar" style={{ width: '90px', height: '90px', borderRadius: '50%', border: '2px solid #c8ff00', boxShadow: '0 0 24px rgba(200,255,0,0.3)', objectFit: 'cover' }} />
+            </div>
+          )}
           <h1 className="db-title">Start a duel.</h1>
           <p className="db-subtitle">// pick your move</p>
 

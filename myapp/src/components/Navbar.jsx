@@ -25,10 +25,14 @@ const navCss = `
   .nav-right { display: flex; align-items: center; gap: 8px; }
   .nav-user-pill { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #999; border: 1px solid #2a2a2a; padding: 5px 12px; border-radius: 2px; }
 
-  .nav-btn { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #999; background: none; border: 1px solid #2a2a2a; padding: 5px 12px; border-radius: 2px; cursor: crosshair; transition: color .15s, border-color .15s; }
+  .nav-btn { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 0.08em; color: #999; background: none; border: 1px solid #2a2a2a; padding: 5px 12px; border-radius: 2px; cursor: crosshair; transition: all .2s ease; }
   .nav-btn:hover { color: #e8e8e0; border-color: #666; }
   .nav-btn.accent { color: #c8ff00; border-color: #c8ff0044; }
   .nav-btn.accent:hover { background: #c8ff0011; border-color: #c8ff00; }
+  
+  @keyframes historyPulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(200, 255, 0, 0.4); } 50% { transform: scale(1.03); box-shadow: 0 0 8px 1px rgba(200, 255, 0, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(200, 255, 0, 0); } }
+  .nav-btn.history { color: #c8ff00; border-color: #c8ff00; background: #0a0a0a; animation: historyPulse 2.5s infinite; transition: all 0.3s; }
+  .nav-btn.history:hover { background: #c8ff00; color: #0a0a0a; animation: none; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(200, 255, 0, 0.2); }
 
   /* ── Edit CF Handle modal ── */
   .nav-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); animation: navFadeIn .15s ease; }
@@ -111,6 +115,9 @@ export default function Navbar({ onCfSaved }) {
         <Link to="/dashboard" className="nav-brand">CF<em>_</em>ARENA</Link>
         <div className="nav-right">
           <span className="nav-user-pill">{userEmail}</span>
+          <button className="nav-btn history" onClick={() => navigate('/history')} title="View match history">
+            History
+          </button>
           <button className="nav-btn accent" onClick={openCfModal} title="Edit Codeforces handle">
             CF Handle
           </button>

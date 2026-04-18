@@ -8,6 +8,7 @@ import MatchCreate from './pages/match/Matchcreate'
 import MatchJoin from './pages/match/MatchJoin'
 import MatchRoom from './pages/match/MatchRoom'
 import Results from './pages/match/Results'
+import History from './pages/match/History'
 
 import { useContext } from "react";
 import { AuthContext } from "./context/AuthContext";
@@ -86,6 +87,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <History />
             </ProtectedRoute>
           }
         />

@@ -207,7 +207,7 @@ private void finishMatch(String matchId) {
     }
 
     // ✅ Create Match
-    public MatchSecondary createMatch(String userId, int durationMinutes) {
+    public MatchSecondary createMatch(String userId, int durationMinutes,String difficulty) {
 
         MatchSecondary match = new MatchSecondary();
 
@@ -218,6 +218,7 @@ private void finishMatch(String matchId) {
 
         match.setStatus("WAITING");
         match.setInviteCode(generateCode());
+        match.setDifficulty(difficulty); 
 
         match.setStartTime(null);
         match.setEndTime(null);
@@ -255,51 +256,55 @@ private void finishMatch(String matchId) {
 
     public MatchPrimary startMatch(String userId, String inviteCode) {
 
-        MatchSecondary match = matchRepository2.findByInviteCode(inviteCode)
-                .orElseThrow(() -> new RuntimeException("Invalid code"));
+    MatchSecondary secondary = matchRepository2.findByInviteCode(inviteCode)
+            .orElseThrow(() -> new RuntimeException("Invalid code"));
 
-        if (!userId.equals(match.getUser1())) {
-            throw new RuntimeException("Only creator can start");
-        }
-
-        if (!"READY".equals(match.getStatus())) {
-            throw new RuntimeException("Player 2 not joined/ready");
-        }
-
-        Date startTime = new Date();
-
-        long durationMillis = match.getEndTime().getTime();
-        Date endTime = new Date(startTime.getTime() + durationMillis);
-
-        List<String> problems = problemService.getMatchProblems(
-                match.getUser1(),
-                match.getUser2()
-        );
-
-        MatchPrimary newMatch = new MatchPrimary();
-
-        newMatch.setUser1(match.getUser1());
-        newMatch.setUser2(match.getUser2());
-
-        newMatch.setScore1(0);
-        newMatch.setScore2(0);
-
-        newMatch.setProblems(problems);
-        newMatch.setCurIdx(0);
-
-        newMatch.setStatus("ONGOING");
-        newMatch.setWinnerId(null);
-
-        newMatch.setStartTime(startTime);
-        newMatch.setEndTime(endTime);
-
-        newMatch.setInviteCode(match.getInviteCode());
-        MatchPrimary saved = matchRepository.save(newMatch);
-        matchRepository2.delete(match);
-        publishMatchUpdate(saved);
-        return saved;
+    if (!userId.equals(secondary.getUser1())) {
+        throw new RuntimeException("Only creator can start");
     }
 
+    if (!"READY".equals(secondary.getStatus())) {
+        throw new RuntimeException("Player 2 not joined/ready");
+    }
+
+    Date startTime = new Date();
+
+    long durationMillis = secondary.getEndTime().getTime();
+    Date endTime = new Date(startTime.getTime() + durationMillis);
+
+    MatchPrimary primary = new MatchPrimary();
+
+    primary.setUser1(secondary.getUser1());
+    primary.setUser2(secondary.getUser2());
+
+    // Transfer difficulty from lobby to live match
+    primary.setDifficulty(secondary.getDifficulty());
+
+    primary.setScore1(0);
+    primary.setScore2(0);
+    primary.setCurIdx(0);
+
+    primary.setStatus("ONGOING");
+    primary.setWinnerId(null);
+
+    primary.setStartTime(startTime);
+    primary.setEndTime(endTime);
+    primary.setInviteCode(secondary.getInviteCode());
+
+    // Pass saved difficulty directly to problem engine
+    List<String> problemUrls = problemService.getMatchProblems(
+            secondary.getUser1(),
+            secondary.getUser2(),
+            secondary.getDifficulty()
+    );
+    primary.setProblems(problemUrls);
+
+    MatchPrimary saved = matchRepository.save(primary);
+    matchRepository2.delete(secondary);
+    publishMatchUpdate(saved);
+
+    return saved;
+}
     public Map<String, Object> getMatchStatus(String inviteCode) {
         String normalizedCode = inviteCode == null ? "" : inviteCode.trim();
 
@@ -349,6 +354,15 @@ private void finishMatch(String matchId) {
         }
 
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found for invite code");
+    }
+    
+        public List<MatchSecondary> getUserMatchHistory(String userId) {
+        
+        List<MatchSecondary> allMatches = matchRepository2.findByUser1OrUser2(userId, userId);
+        
+        return allMatches.stream()
+                .filter(match -> "FINISHED".equals(match.getStatus()))
+                .toList();
     }
 
 }

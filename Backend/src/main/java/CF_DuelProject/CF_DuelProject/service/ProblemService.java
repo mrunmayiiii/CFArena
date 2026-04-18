@@ -16,14 +16,27 @@ public class ProblemService {
     }
 
 
-    public List<String> getMatchProblems(String u1, String u2) {
+    public List<String> getMatchProblems(String u1, String u2,String difficulty) {
         Set<String> solved1 = fetchProblemService.fetchSolved(u1);
         Set<String> solved2 = fetchProblemService.fetchSolved(u2);
 
         Set<String> common = new HashSet<>(solved1);
         common.addAll(solved2);
 
-        List<Integer> ratings = List.of(800, 800, 1000, 1200, 1600);
+        List<Integer> ratings;
+        if (difficulty == null) difficulty = "EASY";
+        switch (difficulty.toUpperCase()) {
+            case "MEDIUM":
+                ratings = List.of(800, 1400, 1500, 1500, 1600);
+                break;
+            case "HARD":
+                ratings = List.of(1300, 1500, 1600, 1700, 1800);
+                break;
+            case "EASY":
+            default:
+                ratings = List.of(800, 800, 1000, 1200, 1600);
+                break;
+        }
         List<String> result = new ArrayList<>();
 
         for (int r : ratings) {
