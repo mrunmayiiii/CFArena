@@ -302,6 +302,53 @@ const css = `
   .mr-toast.error { border-color:var(--danger); background:var(--danger-bg); color:#ffaaaa; }
   @keyframes mrToastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
 
+  /* ── Chat Box ── */
+  .mr-chat { position:fixed; bottom:24px; right:24px; width:320px; z-index:500; display:flex; flex-direction:column; gap:0; }
+  .mr-chat-toggle { display:flex; align-items:center; gap:10px; background:var(--panel3); border:1px solid var(--border2); border-radius:var(--radius); padding:10px 16px; cursor:pointer; font-family:var(--mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted2); transition:color .15s,border-color .15s; }
+  .mr-chat-toggle:hover { color:var(--text); border-color:var(--accent-20); }
+  .mr-chat-unread { background:var(--accent); color:#06060a; font-size:9px; font-weight:700; border-radius:99px; padding:2px 7px; margin-left:auto; }
+  .mr-chat-panel { background:var(--panel); border:1px solid var(--border2); border-radius:var(--radius) var(--radius) 0 0; overflow:hidden; display:flex; flex-direction:column; animation:chatSlideUp .25s cubic-bezier(0.22,1,0.36,1); }
+  @keyframes chatSlideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .mr-chat-head { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); background:var(--surface); }
+  .mr-chat-head-lbl { font-size:9px; letter-spacing:0.24em; text-transform:uppercase; color:var(--muted2); display:flex; align-items:center; gap:8px; }
+  .mr-chat-live-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:mrPulse 1.6s infinite; }
+  .mr-chat-close { background:none; border:none; cursor:pointer; color:var(--muted); font-size:16px; line-height:1; padding:0 2px; transition:color .15s; }
+  .mr-chat-close:hover { color:var(--text); }
+  .mr-chat-msgs { height:220px; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:8px; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+  .mr-chat-msgs::-webkit-scrollbar { width:4px; }
+  .mr-chat-msgs::-webkit-scrollbar-thumb { background:var(--border2); border-radius:99px; }
+  .mr-chat-msg { display:flex; flex-direction:column; gap:2px; animation:msgIn .18s ease; }
+  @keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .mr-chat-msg.mine { align-items:flex-end; }
+  .mr-chat-sender { font-size:9px; letter-spacing:0.1em; color:var(--muted); text-transform:uppercase; }
+  .mr-chat-bubble { font-size:12px; padding:7px 12px; border-radius:var(--radius); max-width:88%; word-break:break-word; line-height:1.5; }
+  .mr-chat-msg:not(.mine) .mr-chat-bubble { background:var(--panel2); border:1px solid var(--border); color:var(--text2); border-radius:4px 12px 12px 12px; }
+  .mr-chat-msg.mine .mr-chat-bubble { background:rgba(200,255,0,0.1); border:1px solid var(--accent-20); color:var(--accent-dim); border-radius:12px 4px 12px 12px; }
+  .mr-chat-empty { font-size:11px; color:var(--muted); text-align:center; padding:20px 0; letter-spacing:0.06em; }
+  .mr-chat-input-row { display:flex; border-top:1px solid var(--border); }
+  .mr-chat-input { flex:1; background:none; border:none; outline:none; font-family:var(--mono); font-size:12px; color:var(--text); padding:11px 14px; placeholder-color:var(--muted); }
+  .mr-chat-input::placeholder { color:var(--muted); }
+  .mr-chat-send { background:none; border:none; border-left:1px solid var(--border); padding:0 14px; cursor:pointer; font-size:16px; transition:background .15s; }
+  .mr-chat-send:hover { background:var(--accent-5); }
+
+  /* ── Emote Board ── */
+  .mr-emote-board { display:flex; align-items:center; gap:6px; padding:10px 14px; border-top:1px solid var(--border); background:var(--surface); overflow-x:auto; scrollbar-width:none; }
+  .mr-emote-board::-webkit-scrollbar { display:none; }
+  .mr-emote-btn { background:none; border:1px solid var(--border); border-radius:var(--radius); padding:5px 9px; font-size:18px; cursor:pointer; transition:transform .1s, border-color .15s, background .15s; flex-shrink:0; }
+  .mr-emote-btn:hover { transform:scale(1.3); border-color:var(--border3); background:var(--panel2); }
+  .mr-emote-btn:active { transform:scale(0.9); }
+
+  /* ── Floating Emote Animation ── */
+  .mr-emote-overlay { position:fixed; inset:0; z-index:600; pointer-events:none; overflow:hidden; }
+  .mr-float-emote { position:absolute; bottom:10%; font-size:80px; animation:floatEmote 2.2s cubic-bezier(0.22,1,0.36,1) forwards; pointer-events:none; filter:drop-shadow(0 0 24px rgba(200,255,0,0.4)); }
+  @keyframes floatEmote {
+    0%   { transform:translateY(0)   scale(0.3) rotate(-15deg); opacity:0; }
+    12%  { transform:translateY(-40px) scale(1.4) rotate(8deg);  opacity:1; }
+    40%  { transform:translateY(-180px) scale(1.1) rotate(-4deg); opacity:1; }
+    80%  { transform:translateY(-380px) scale(0.9) rotate(6deg);  opacity:0.6; }
+    100% { transform:translateY(-520px) scale(0.7) rotate(-2deg); opacity:0; }
+  }
+
   /* ── Responsive ── */
   @media (max-width:640px) {
     .mr-players { grid-template-columns:1fr; }
@@ -418,6 +465,16 @@ export default function MatchRoom() {
   const [meAvatar, setMeAvatar]           = useState(null)
   const [oppAvatar, setOppAvatar]         = useState(null)
 
+  // ── Chat & Emote state ──────────────────────────────────
+  const [chatOpen,    setChatOpen]    = useState(false)
+  const [chatMsgs,    setChatMsgs]    = useState([])
+  const [chatInput,   setChatInput]   = useState('')
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [floatEmotes, setFloatEmotes] = useState([])   // [{id, emote, x}]
+  const chatEndRef = useRef(null)
+
+  const EMOTES = ['🔥', '💀', '🚀', '🤡', '💩', '😤', '🧠', '⚡']
+
   const [justSolvedRows,   setJustSolvedRows]   = useState({})
   const [justUnlockedRows, setJustUnlockedRows] = useState({})
   const [justPopNums,      setJustPopNums]      = useState({})
@@ -532,6 +589,44 @@ export default function MatchRoom() {
     return () => clearInterval(t)
   }, [fetchStatus])
 
+  // ── Auto-scroll chat to bottom ──────────────────────────
+  useEffect(() => {
+    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMsgs, chatOpen])
+
+  // ── Reset unread when chat opened ────────────────────────
+  useEffect(() => { if (chatOpen) setUnreadCount(0) }, [chatOpen])
+
+  // ── Send chat message ─────────────────────────────────────
+  const sendChat = () => {
+    const text = chatInput.trim()
+    if (!text || !wsRef.current) return
+    wsRef.current.send('/app/match/chat', {}, JSON.stringify({
+      inviteCode,
+      sender: myHandle || 'you',
+      text,
+    }))
+    setChatInput('')
+  }
+
+  // ── Send emote ────────────────────────────────────────────
+  const sendEmote = (emote) => {
+    if (!wsRef.current) return
+    wsRef.current.send('/app/match/emote', {}, JSON.stringify({
+      inviteCode,
+      sender: myHandle || 'you',
+      emote,
+    }))
+  }
+
+  // ── Trigger floating emote animation ─────────────────────
+  const triggerFloatEmote = (emote) => {
+    const id  = Date.now() + Math.random()
+    const x   = 10 + Math.random() * 80   // random horizontal position %
+    setFloatEmotes(prev => [...prev, { id, emote, x }])
+    setTimeout(() => setFloatEmotes(prev => prev.filter(e => e.id !== id)), 2400)
+  }
+
   useEffect(() => {
     const s1 = document.createElement('script')
     s1.src = 'https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js'
@@ -544,6 +639,7 @@ export default function MatchRoom() {
           const client = window.Stomp.over(sock)
           client.debug = null
           client.connect({}, () => {
+            // ── Existing: match score updates ──────────────
             client.subscribe(`/topic/match/${inviteCode}`, msg => {
               try {
                 const data = JSON.parse(msg.body)
@@ -556,6 +652,26 @@ export default function MatchRoom() {
                 detectChanges(data)
                 setMatch(data)
                 if (data?.status === 'FINISHED') navigate(`/results/${inviteCode}`)
+              } catch {}
+            })
+
+            // ── NEW: real-time chat ────────────────────────
+            client.subscribe(`/topic/match/${inviteCode}/chat`, msg => {
+              try {
+                const data = JSON.parse(msg.body)
+                setChatMsgs(prev => [...prev, data])
+                setChatOpen(prev => {
+                  if (!prev) setUnreadCount(c => c + 1)
+                  return prev
+                })
+              } catch {}
+            })
+
+            // ── NEW: emote reactions ───────────────────────
+            client.subscribe(`/topic/match/${inviteCode}/emotes`, msg => {
+              try {
+                const data = JSON.parse(msg.body)
+                triggerFloatEmote(data.emote)
               } catch {}
             })
           })
@@ -688,6 +804,62 @@ export default function MatchRoom() {
       <style>{css}</style>
       {showLoading && <LoadingScreen />}
       {unlockBanner && <UnlockBanner problemName={unlockBanner} />}
+
+      {/* ── Floating Emote Overlay ── */}
+      <div className="mr-emote-overlay">
+        {floatEmotes.map(({ id, emote, x }) => (
+          <div key={id} className="mr-float-emote" style={{ left: `${x}%` }}>{emote}</div>
+        ))}
+      </div>
+
+      {/* ── Chat Box (fixed bottom-right) ── */}
+      {isOngoing && (
+        <div className="mr-chat">
+          {chatOpen && (
+            <div className="mr-chat-panel">
+              <div className="mr-chat-head">
+                <span className="mr-chat-head-lbl">
+                  <span className="mr-chat-live-dot" />
+                  Match Chat
+                </span>
+                <button className="mr-chat-close" onClick={() => setChatOpen(false)}>✕</button>
+              </div>
+              <div className="mr-chat-msgs">
+                {chatMsgs.length === 0 && <div className="mr-chat-empty">No messages yet. Say something!</div>}
+                {chatMsgs.map((m, i) => (
+                  <div key={i} className={`mr-chat-msg ${m.sender === (myHandle || 'you') ? 'mine' : ''}`}>
+                    <span className="mr-chat-sender">{m.sender}</span>
+                    <div className="mr-chat-bubble">{m.text}</div>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+              {/* Emote board */}
+              <div className="mr-emote-board">
+                {EMOTES.map(e => (
+                  <button key={e} className="mr-emote-btn" onClick={() => sendEmote(e)} title="Send emote">{e}</button>
+                ))}
+              </div>
+              <div className="mr-chat-input-row">
+                <input
+                  className="mr-chat-input"
+                  placeholder="Type a message…"
+                  value={chatInput}
+                  onChange={ev => setChatInput(ev.target.value)}
+                  onKeyDown={ev => ev.key === 'Enter' && sendChat()}
+                />
+                <button className="mr-chat-send" onClick={sendChat}>↑</button>
+              </div>
+            </div>
+          )}
+          <button className="mr-chat-toggle" onClick={() => setChatOpen(o => !o)}>
+            💬 <span>Chat</span>
+            {!chatOpen && unreadCount > 0 && (
+              <span className="mr-chat-unread">{unreadCount}</span>
+            )}
+          </button>
+        </div>
+      )}
 
       <div className="mr">
         <Navbar onCfSaved={() => showToast('CF handle updated!')} />

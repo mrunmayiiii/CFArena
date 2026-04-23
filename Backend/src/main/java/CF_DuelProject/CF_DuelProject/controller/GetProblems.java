@@ -16,8 +16,8 @@ public class GetProblems {
         this.problemService = problemService;
     }
 
-    @GetMapping("/{u1}/{u2}")
-    public List<String> getProblems(@PathVariable String u1,@PathVariable String u2) {
-        return problemService.getMatchProblems(u1,u2,"EASY");
+    @GetMapping("/{u1}/{u2}/{difficulty}")
+    public List<String> getProblems(@PathVariable String u1, @PathVariable String u2, @PathVariable String difficulty) {
+        return problemService.getMatchProblems(u1, u2, difficulty);
     }
 }
